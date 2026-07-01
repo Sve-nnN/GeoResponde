@@ -53,6 +53,19 @@ export function buildApp(): FastifyInstance {
     return gateway.getProviders()
   })
 
+  // Live provider GeoJSON layer proxy (e.g. terremotovenezuela damaged
+  // buildings). Resolves the adapter by catalog id and returns its normalized
+  // FeatureCollection with the provider's attribution header. Degrade-safe: an
+  // unknown provider, an adapter without a layer, or an unreachable upstream all
+  // yield an empty FeatureCollection — never a 5xx.
+  fastify.get('/api/providers/:id/geojson', async (request, reply) => {
+    await ensureReady()
+    const { id } = request.params as { id: string }
+    const { collection, attribution } = await gateway.getProviderGeoJSON(id)
+    if (attribution) reply.header('X-Attribution', attribution)
+    return collection
+  })
+
   fastify.get('/api/search', async (request) => {
     await ensureReady()
     const query = (request.query as { q?: string }).q

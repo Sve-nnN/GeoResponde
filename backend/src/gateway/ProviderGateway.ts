@@ -168,6 +168,33 @@ export class ProviderGateway {
   }
 
   /**
+   * Proxy a provider's live GeoJSON layer (adapters that federate one expose
+   * `getGeoJSON`). Resolves the adapter by catalog id and returns its normalized
+   * FeatureCollection plus the provider's attribution label. Degrade-safe:
+   * returns an empty FeatureCollection (never throws, never 5xx) when the
+   * provider is unknown, exposes no layer, or the upstream is unavailable.
+   */
+  async getProviderGeoJSON(
+    providerId: string,
+  ): Promise<{ collection: { type: 'FeatureCollection'; features: unknown[] }; attribution: string }> {
+    const empty = { type: 'FeatureCollection' as const, features: [] as unknown[] };
+    const adapter = this.adapters.get(providerId);
+    if (!adapter || typeof adapter.getGeoJSON !== 'function') {
+      return { collection: empty, attribution: '' };
+    }
+    try {
+      const collection = await adapter.getGeoJSON();
+      return {
+        collection: collection ?? empty,
+        attribution: adapter.provider.display_name,
+      };
+    } catch {
+      // Never surface the upstream error/URL; degrade to an empty collection.
+      return { collection: empty, attribution: adapter.provider.display_name };
+    }
+  }
+
+  /**
    * Diagnostic helper for the `/api/dev/inspect/:id` developer endpoint.
    * Runs a single provider's adapter in isolation and reports what came back,
    * so contributors can verify a new integration without booting the whole UI.
