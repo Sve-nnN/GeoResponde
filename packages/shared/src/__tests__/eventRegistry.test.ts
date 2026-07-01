@@ -4,6 +4,7 @@ import {
   currentEventId,
   getEvent,
   bboxToEonetParam,
+  COUNTRY_BBOX,
 } from '../index.js';
 
 const ENV_KEY = 'GR_CURRENT_EVENT';
@@ -56,5 +57,37 @@ describe('registry composition', () => {
     const event = getEvent('ve-2026-quake');
     expect(event?.country).toBe('VE');
     expect(bboxToEonetParam(event!.country)).toBeDefined();
+  });
+});
+
+describe('NASA ARIA DPM block (Phase 15)', () => {
+  it('resolves the seeded event to a NASA block with exactly one dpm FeatureServer', () => {
+    const event = getEvent('ve-2026-quake');
+    expect(event?.nasa).toBeDefined();
+    expect(event?.nasa?.featureServers).toHaveLength(1);
+    expect(event?.nasa?.featureServers[0].key).toBe('dpm');
+  });
+
+  it('carries the DPM FeatureServer url and the mandatory damage=1 filter as config', () => {
+    const dpm = getEvent('ve-2026-quake')!.nasa!.featureServers[0];
+    expect(dpm.url).toContain('202610_s1_likelydmgareas/FeatureServer/0');
+    // The mandatory server-side filter is config, never fetched-all (ND-03).
+    expect(dpm.where).toBe('damage=1');
+    expect(dpm.outFields).toBe('damage_probability,label');
+    expect(dpm.label).toContain('DPM');
+  });
+
+  it('carries the mandatory ARIA/NASA/ESA/Overture attribution and experimental disclaimer', () => {
+    const nasa = getEvent('ve-2026-quake')!.nasa!;
+    expect(nasa.attribution).toContain('NASA-JPL');
+    expect(nasa.attribution).toContain('Overture');
+    expect(nasa.disclaimer).toContain('Experimental');
+  });
+
+  it('composes with the country registry so the adapter can reorder the bbox into an ArcGIS envelope', () => {
+    const event = getEvent('ve-2026-quake')!;
+    expect(COUNTRY_BBOX[event.country]).toBeDefined();
+    // Stored W,N,E,S — the 15-02 adapter reorders this into the ArcGIS envelope.
+    expect(COUNTRY_BBOX[event.country]).toEqual([-73.4, 12.2, -59.8, 0.6]);
   });
 });

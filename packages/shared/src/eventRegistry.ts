@@ -27,18 +27,54 @@ export interface CopernicusActivation {
 }
 
 /**
+ * A single NASA ARIA FeatureServer attached to an event (Phase 15, ND-02). `key`
+ * is the route product slug (e.g. `'dpm'`) — the fixed, allowlisted literal the
+ * gateway route accepts, never interpolated. `url` is the anonymous public AGOL
+ * FeatureServer *layer* endpoint (`.../FeatureServer/0`). `where` is the
+ * MANDATORY server-side filter (`damage=1`) the gateway always applies so it
+ * never fetches all ~2.7M polygons (ND-03). `outFields` is the reduced attribute
+ * set requested to keep the payload small (`damage_probability,label`).
+ */
+export interface NasaFeatureServer {
+  key: string;
+  label: string;
+  url: string;
+  where: string;
+  outFields?: string;
+}
+
+/**
+ * The NASA ARIA layer block for an event (Phase 15, ND-02/ND-06). `attribution`
+ * and `disclaimer` are the verbatim strings surfaced on every DPM response header
+ * (`X-Attribution` / `X-Damage-Disclaimer`) and in the map legend — the DPM is an
+ * experimental, unvalidated product and both credits are mandatory. Adding a
+ * disaster's DPM is purely config: drop a `nasa` block on its event key with the
+ * anonymous AGOL FeatureServer url (this IS the "config-driven, anonymous AGOL"
+ * discovery of NASA-01; AGOL search auto-discovery is deferred).
+ */
+export interface NasaEventLayers {
+  attribution: string;
+  disclaimer: string;
+  featureServers: NasaFeatureServer[];
+}
+
+/**
  * A single disaster event. `country` is an iso2 key into {@link COUNTRY_BBOX}
  * (so the event composes with the country registry); `copernicus` is optional
  * because not every future event will have an EMS activation.
  *
- * Deliberately NARROW for Phase 14: no NASA / imageServer fields here — those
- * belong to Phase 15/16 and are out of scope (D-11 boundary).
+ * `nasa` is the Phase 15 extension: the D-11 boundary Phase 14 deliberately left
+ * out is now lifted — an event can carry a NASA ARIA layer block (currently the
+ * DPM FeatureServer). It stays optional because not every event has ARIA
+ * coverage. No imageServer/interferogram field is added here: that is Phase 16
+ * (NASA-03), out of scope.
  */
 export interface DisasterEvent {
   id: string;
   title: string;
   country: string;
   copernicus?: CopernicusActivation;
+  nasa?: NasaEventLayers;
 }
 
 /**
@@ -54,6 +90,26 @@ export const DISASTER_EVENTS: Record<string, DisasterEvent> = {
     copernicus: {
       activationId: 'EMSR884',
       attribution: '© European Union, 2026, Copernicus EMS (EMSR884)',
+    },
+    // NASA ARIA "Likelihood of Damaged Structures" (DPM). The url is the
+    // anonymous, public AGOL FeatureServer layer — this is the config-driven,
+    // anonymous-AGOL discovery of NASA-01 (adding a disaster's DPM = drop this
+    // block on its event key; AGOL search auto-discovery is deferred). `where`
+    // is the mandatory server-side filter so the gateway never fetches all
+    // ~2.7M polygons, only the ~58,870 damaged ones (ND-03).
+    nasa: {
+      attribution:
+        'ARIA / NASA-JPL / Caltech, contains modified Copernicus Sentinel-1 data (ESA). Building footprints © Overture Maps Foundation.',
+      disclaimer: 'Experimental — not validated for operational use.',
+      featureServers: [
+        {
+          key: 'dpm',
+          label: 'Likelihood of Damaged Structures (DPM)',
+          url: 'https://services7.arcgis.com/WSiUmUhlFx4CtMBB/arcgis/rest/services/202610_s1_likelydmgareas/FeatureServer/0',
+          where: 'damage=1',
+          outFields: 'damage_probability,label',
+        },
+      ],
     },
   },
 };
