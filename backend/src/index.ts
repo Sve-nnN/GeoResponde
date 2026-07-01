@@ -9,7 +9,39 @@ import { fetchAidSites } from './adapters/sitios/service.js'
 import { fetchUsgsEarthquakes } from './adapters/usgs/service.js'
 import { fetchFunvisisEarthquakes } from './adapters/funvisis/service.js'
 import { fetchCopernicusProduct } from './adapters/damage/service.js'
-import { fetchNasaDpm } from './adapters/damage/nasa.js'
+import { fetchNasaDpm, warmNasaDpm } from './adapters/damage/nasa.js'
+
+/**
+ * Cache-Control for the damage read routes so the deployed gateway's CDN/edge
+ * absorbs repeat visits and users hit the edge, not the origin. Real data
+ * (`live`/`cache`) is cached for an hour and served stale-while-revalidate for a
+ * day. A degraded/warming/empty response is cached only briefly so the CDN never
+ * pins an empty result while the in-memory cache warms. The full request URL
+ * (including `?bbox`) is the CDN key, so viewport subsets cache independently;
+ * no user-specific `Vary` is added.
+ */
+function damageCacheControl(source: string): string {
+  return source === 'live' || source === 'cache'
+    ? 'public, max-age=3600, stale-while-revalidate=86400'
+    : 'public, max-age=30'
+}
+
+/**
+ * Make a string safe as an HTTP header value. Header values are limited to
+ * ISO-8859-1 (Latin-1); a Unicode char outside it (e.g. the em dash `—` in the
+ * NASA disclaimer, U+2014) makes Node throw ERR_INVALID_CHAR and return 500.
+ * Typographic dashes/quotes are downgraded to ASCII and anything still outside
+ * Latin-1 is dropped, so attribution/disclaimer strings can never crash a
+ * response. `©` (U+00A9) is inside Latin-1 and is preserved.
+ */
+function headerSafe(value: string): string {
+  return value
+    .replace(/[‐-―]/g, '-')
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[^\x00-\xFF]/g, '')
+}
 
 /**
  * Build and configure the Provider Gateway HTTP app. Exported so it can run
@@ -37,6 +69,19 @@ export function buildApp(): FastifyInstance {
   gateway.setLogger(fastify.log)
   let ready: Promise<void> | null = null
   const ensureReady = () => (ready ??= gateway.initialize())
+
+  // Warm the full NASA DPM set in the BACKGROUND at startup so the first viewport
+  // request is served from memory instead of triggering the ~110s extraction.
+  // Fire-and-forget: it must NOT delay boot, and any failure degrades safely (the
+  // route returns `warming` until the cache fills). Skipped under the test runner
+  // so unit tests never touch the live FeatureServer.
+  if (!process.env.VITEST) {
+    warmNasaDpm().catch((err) => {
+      fastify.log.error(
+        `[damage:nasa] background boot warm failed: ${err instanceof Error ? err.message : String(err)}`,
+      )
+    })
+  }
 
   fastify.get('/api/health', async () => ({ ok: true }))
 
@@ -151,29 +196,34 @@ export function buildApp(): FastifyInstance {
     const { product } = request.params as { product: string }
     const result = await fetchCopernicusProduct(product)
     reply.header('X-Damage-Source', result.source)
-    if (result.attribution) reply.header('X-Attribution', result.attribution)
+    reply.header('Cache-Control', damageCacheControl(result.source))
+    if (result.attribution) reply.header('X-Attribution', headerSafe(result.attribution))
     return result.collection
   })
 
-  // Situation map NASA ARIA damage-proxy (DPM) layer (Phase 15). Proxies the
-  // public, anonymous ArcGIS FeatureServer "Likelihood of Damaged Structures" as
-  // cached GeoJSON. The frontend MUST hit THIS route, never ArcGIS directly — the
-  // volatile 1h cache, the MANDATORY `where=damage=1` + country-bbox envelope +
-  // 2000/page pagination filter (so it NEVER fetches all ~2.7M polygons, only the
-  // ~58,870 damaged ones), the ArcGIS host-allowlist SSRF guard, and the
-  // degrade-safe behavior (fresh->stale->empty) all live here, so it NEVER returns
-  // 5xx. Accepts an OPTIONAL `?bbox=minLng,minLat,maxLng,maxLat` viewport override
-  // (numeric-validated); absent it uses the event's country bbox. Attribution
-  // (ARIA/NASA-JPL/ESA/Overture) AND the experimental disclaimer are REQUIRED and
-  // carried on X-Attribution / X-Damage-Disclaimer. Not gated behind ensureReady():
-  // damage is independent of the provider catalog, like the Copernicus/EONET/USGS
-  // routes.
+  // Situation map NASA ARIA damage-proxy (DPM) layer (Phase 15 / 15-04). Proxies
+  // the public, anonymous ArcGIS FeatureServer "Likelihood of Damaged Structures".
+  // The frontend MUST hit THIS route, never ArcGIS directly. The gateway warms the
+  // FULL `where=damage=1` set (~58,870 polygons, OID-cursor paginated, so it NEVER
+  // fetches all ~2.7M) into a volatile 6h cache in the background, then filters
+  // that warm set in memory to the requested `?bbox=minLng,minLat,maxLng,maxLat`
+  // viewport (numeric-validated) — the layer's spatial query itself times out, so
+  // viewport loading is done by AABB-filtering the cache, not by an ArcGIS spatial
+  // query. Absent `?bbox` it returns the full (capped) set. If the set is not warm
+  // yet it returns an empty collection with X-Damage-Source: warming and kicks the
+  // background warm — it NEVER blocks for the ~110s extraction. The ArcGIS
+  // host-allowlist SSRF guard and degrade-safe behavior all live here, so it NEVER
+  // returns 5xx. Attribution (ARIA/NASA-JPL/ESA/Overture) AND the experimental
+  // disclaimer are REQUIRED and carried on X-Attribution / X-Damage-Disclaimer.
+  // Cache-Control offloads repeat visits to the CDN/edge. Not gated behind
+  // ensureReady(): damage is independent of the provider catalog.
   fastify.get('/api/damage/nasa/dpm', async (request, reply) => {
     const { bbox } = request.query as { bbox?: string }
     const result = await fetchNasaDpm({ bbox })
     reply.header('X-Damage-Source', result.source)
-    if (result.attribution) reply.header('X-Attribution', result.attribution)
-    if (result.disclaimer) reply.header('X-Damage-Disclaimer', result.disclaimer)
+    reply.header('Cache-Control', damageCacheControl(result.source))
+    if (result.attribution) reply.header('X-Attribution', headerSafe(result.attribution))
+    if (result.disclaimer) reply.header('X-Damage-Disclaimer', headerSafe(result.disclaimer))
     return result.collection
   })
 

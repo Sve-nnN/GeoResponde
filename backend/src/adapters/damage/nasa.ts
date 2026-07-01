@@ -196,11 +196,19 @@ export function mergeArcgisPages(pages: unknown[]): DamageFeatureCollection {
   return mergeCollections(pages);
 }
 
+/**
+ * Degrade-safe source reported to the client. Extends the shared Copernicus
+ * source with `warming`: the full DPM set is not cached yet, a background fetch
+ * has been kicked off, and an empty collection is returned NOW instead of
+ * blocking the request for the ~110s the full extraction takes (15-04).
+ */
+export type NasaDpmSource = DamageSource | 'warming';
+
 export interface NasaDamageResult {
   collection: DamageFeatureCollection;
   attribution: string;
   disclaimer: string;
-  source: DamageSource;
+  source: NasaDpmSource;
 }
 
 export interface NasaDeps {
@@ -211,13 +219,25 @@ export interface NasaDeps {
 }
 
 /**
- * Module-level singleton — a shared 1h budget (ND-04). ARIA products are revised
- * as new Sentinel-1 passes land, so the TTL is shorter than Copernicus's 6h.
+ * Module-level singleton — a shared 6h budget (15-04). The full damaged-structure
+ * set is warmed once and reused; ARIA revises the product only when a new
+ * Sentinel-1 pass lands, so a 6h TTL keeps the ~110s extraction rare while still
+ * picking up revisions within a working session.
  */
 const defaultDeps: NasaDeps = {
-  cache: new DamageCache({ ttlMs: 60 * 60 * 1000, maxEntries: 8 }),
+  cache: new DamageCache({ ttlMs: 6 * 60 * 60 * 1000, maxEntries: 8 }),
   fetchJson,
 };
+
+/**
+ * Stable cache key for the FULL `where=damage=1` set of an event, independent of
+ * any viewport bbox (15-04). Viewport subsets are filtered from this one entry in
+ * memory and are NEVER cached themselves — recomputing an AABB filter is
+ * microseconds and per-bbox keys would explode the cache.
+ */
+function fullSetKey(eventId: string): string {
+  return `${eventId}:dpm:full`;
+}
 
 function emptyCollection(): DamageFeatureCollection {
   return { type: 'FeatureCollection', features: [] };
@@ -236,66 +256,33 @@ function pageFeatureCount(page: unknown): number {
 }
 
 /**
- * Fetch the current event's DPM as cached, filtered, paginated GeoJSON. Flow
- * mirrors `fetchCopernicusProduct` (ND-04):
- *   - no active event / no NASA block / no `dpm` FeatureServer
- *       -> empty collection, source 'empty', NO upstream fetch;
- *   - fresh in-TTL cache hit (keyed by event + product + envelope) -> 'cache';
- *   - miss -> loop `buildDpmQueryUrl(offset=0,2000,...)` fetching each page,
- *       stop on a short page (< pageSize) OR the hard page cap, merge, cache ->
- *       'live';
- *   - any page fetch throws/times out -> stale cache ('cache') if present, else
- *       empty ('empty').
- * The `where` sent upstream is ALWAYS the registry `damage=1` (ND-03). NEVER
- * throws, NEVER returns 5xx. Attribution + disclaimer come from `event.nasa`
- * (ND-06); on the empty/no-block path both are ''.
+ * Run the FULL `where=damage=1` OID-cursor extraction once and return the merged
+ * collection, or undefined when page 0 itself fails (total wipeout). NO spatial
+ * envelope is sent — the hosted layer's spatial query times out (see the module
+ * header), and `where=damage=1` already bounds the ~58,870 damaged polygons
+ * (ND-03). Partial tolerance: a slow/failed later page STOPS pagination but keeps
+ * every page collected so far. Pagination is by an ascending OID cursor
+ * (`fid>lastSeen`), NOT deep resultOffset, so pages stay fast at any depth.
  */
-export async function fetchNasaDpm(
-  opts: { bbox?: string; eventId?: string } = {},
-  deps: NasaDeps = defaultDeps,
-): Promise<NasaDamageResult> {
-  const eventId = opts.eventId ?? currentEventId();
-  const event = getEvent(eventId);
-  const nasa = event?.nasa;
-  const dpm = nasa?.featureServers.find((fs) => fs.key === 'dpm');
-  const attribution = nasa?.attribution ?? '';
-  const disclaimer = nasa?.disclaimer ?? '';
-
-  // Fail-closed short-circuits — no upstream fetch.
-  if (!event || !nasa || !dpm) {
-    return { collection: emptyCollection(), attribution, source: 'empty', disclaimer };
-  }
-
-  // An OPTIONAL client `?bbox` override is already minLng,minLat,maxLng,maxLat
-  // (ArcGIS envelope order), so join as-is (ND-05). The default path sends NO
-  // envelope: the country-bbox spatial query times out on this layer (see the
-  // module header), and `where=damage=1` already bounds the result (ND-03).
-  const clientBbox = parseBboxParam(opts.bbox);
-  const envelope = clientBbox ? clientBbox.join(',') : undefined;
-
-  // Cache key distinguishes the default (country-scoped) result from any bbox
-  // override so the two never collide.
-  const key = `${eventId}:dpm:${envelope ?? 'default'}`;
-
-  const fresh = deps.cache.get(key);
-  if (fresh) return { collection: fresh, attribution, source: 'cache', disclaimer };
-
+async function fetchFullDpm(
+  dpm: { url: string; where: string; outFields?: string },
+  deps: NasaDeps,
+): Promise<{ collection: DamageFeatureCollection; complete: boolean } | undefined> {
   const pageSize = deps.pageSize ?? DEFAULT_PAGE_SIZE;
   const outFields = dpm.outFields ?? '*';
 
-  // Partial tolerance (mirrors Phase 14's Promise.allSettled resilience): a slow
-  // or failed page STOPS pagination but keeps every page collected so far — one
-  // bad page never nukes the whole result. Only a total wipeout (page 0 itself
-  // fails) degrades to stale/empty. Pagination is by an ascending OID cursor
-  // (`fid>lastSeen`), NOT deep resultOffset, so pages stay fast at any depth.
   const pages: unknown[] = [];
   let pageError: unknown;
+  // `complete` is true only when pagination ended NATURALLY on a short page (the
+  // real end of the data), not when a page failed or the cursor became
+  // unreadable. A partial extraction must NOT be cached as if it were the full
+  // set — see warmNasaDpm (15-04).
+  let complete = false;
   let cursor = -1;
   for (let page = 0; page < MAX_PAGES; page++) {
     const url = buildDpmQueryUrl(dpm.url, {
       where: dpm.where,
       outFields,
-      envelope,
       cursor,
       idField: OID_FIELD,
       recordCount: pageSize,
@@ -320,8 +307,12 @@ export async function fetchNasaDpm(
     }
 
     pages.push(body);
-    // A short page (fewer than a full page) ends pagination normally.
-    if (pageFeatureCount(body) < pageSize) break;
+    // A short page (fewer than a full page) ends pagination normally — this is
+    // the ONLY clean, complete end.
+    if (pageFeatureCount(body) < pageSize) {
+      complete = true;
+      break;
+    }
     // Advance the cursor to the last OID; if unreadable, stop (cannot page on).
     const next = lastCursor(body, OID_FIELD);
     if (next === undefined || next <= cursor) break;
@@ -336,18 +327,215 @@ export async function fetchNasaDpm(
         }`,
       );
     }
-    const collection = mergeArcgisPages(pages);
-    deps.cache.set(key, collection);
-    return { collection, attribution, source: 'live', disclaimer };
+    return { collection: mergeArcgisPages(pages), complete };
   }
 
-  // Page 0 itself failed — degrade gracefully (never throw, never 5xx, T-15-04).
   console.error(
     `[damage:nasa] upstream query failed, degrading gracefully: ${
       pageError instanceof Error ? pageError.message : String(pageError)
     }`,
   );
-  const stale = deps.cache.getStale(key);
-  if (stale) return { collection: stale, attribution, source: 'cache', disclaimer };
-  return { collection: emptyCollection(), attribution, source: 'empty', disclaimer };
+  return undefined;
+}
+
+/**
+ * In-flight de-dup, scoped to the cache instance so concurrent requests (and the
+ * boot warm) share ONE upstream extraction instead of stampeding ArcGIS with
+ * dozens of parallel 110s fetches. Keyed by cache so tests with fresh caches
+ * never collide with each other or the module singleton.
+ */
+const inflightWarms = new WeakMap<DamageCache, Map<string, Promise<DamageFeatureCollection | undefined>>>();
+
+function inflightFor(cache: DamageCache): Map<string, Promise<DamageFeatureCollection | undefined>> {
+  let map = inflightWarms.get(cache);
+  if (!map) {
+    map = new Map();
+    inflightWarms.set(cache, map);
+  }
+  return map;
+}
+
+/**
+ * Warm (or return the already-warm) FULL DPM set for an event under the stable
+ * {@link fullSetKey}. Idempotent and de-duped: a fresh cache hit returns
+ * immediately; an in-flight warm is joined rather than restarted; only a genuine
+ * miss triggers the ~110s upstream extraction (logged start/finish). On a total
+ * upstream failure the last stale value (if any) is returned and nothing is
+ * cached, so the next request retries. NEVER throws.
+ */
+export async function warmNasaDpm(
+  opts: { eventId?: string } = {},
+  deps: NasaDeps = defaultDeps,
+): Promise<DamageFeatureCollection | undefined> {
+  const eventId = opts.eventId ?? currentEventId();
+  const event = getEvent(eventId);
+  const dpm = event?.nasa?.featureServers.find((fs) => fs.key === 'dpm');
+  if (!event || !dpm) return undefined;
+
+  const key = fullSetKey(eventId);
+  const fresh = deps.cache.get(key);
+  if (fresh) return fresh;
+
+  const map = inflightFor(deps.cache);
+  const existing = map.get(key);
+  if (existing) return existing;
+
+  const started = Date.now();
+  console.log(`[damage:nasa] warm start — extracting full DPM set for ${eventId}`);
+  const promise = (async () => {
+    try {
+      const result = await fetchFullDpm(dpm, deps);
+      // Cache ONLY a complete extraction (natural short-page end). A partial set
+      // from a transient page failure is returned to the immediate caller but is
+      // NOT cached — otherwise a truncated result would be pinned for the full
+      // 6h TTL; instead the next request re-warms and self-heals (15-04).
+      if (result && result.complete && result.collection.features.length > 0) {
+        deps.cache.set(key, result.collection);
+        console.log(
+          `[damage:nasa] warm finish — cached ${result.collection.features.length} DPM features for ${eventId} in ${
+            Date.now() - started
+          }ms`,
+        );
+        return result.collection;
+      }
+      if (result && result.collection.features.length > 0) {
+        console.error(
+          `[damage:nasa] warm finish — PARTIAL extraction (${result.collection.features.length} features) for ${eventId} after ${
+            Date.now() - started
+          }ms; not caching, will retry on next request`,
+        );
+        return result.collection;
+      }
+      console.error(
+        `[damage:nasa] warm finish — upstream returned no features for ${eventId} after ${
+          Date.now() - started
+        }ms; leaving cache unwarmed for retry`,
+      );
+      return deps.cache.getStale(key);
+    } catch (err) {
+      console.error(
+        `[damage:nasa] warm failed for ${eventId}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return deps.cache.getStale(key);
+    } finally {
+      map.delete(key);
+    }
+  })();
+  map.set(key, promise);
+  return promise;
+}
+
+/**
+ * Lazily-memoized geometry AABB `[minX,minY,maxX,maxY]` for a feature, keyed by
+ * the feature object so the walk over its coordinates happens ONCE across every
+ * viewport request. `null` marks a feature with no readable finite coordinate so
+ * it is not re-walked. Handles Point/LineString/Polygon/Multi* by recursing into
+ * the nested coordinate arrays.
+ */
+const bboxMemo = new WeakMap<object, [number, number, number, number] | null>();
+
+function featureBbox(feature: unknown): [number, number, number, number] | undefined {
+  if (!feature || typeof feature !== 'object') return undefined;
+  const cached = bboxMemo.get(feature as object);
+  if (cached !== undefined) return cached ?? undefined;
+
+  const geometry = (feature as { geometry?: unknown }).geometry;
+  const coordinates =
+    geometry && typeof geometry === 'object'
+      ? (geometry as { coordinates?: unknown }).coordinates
+      : undefined;
+
+  const acc: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
+  let found = false;
+  const visit = (node: unknown): void => {
+    if (!Array.isArray(node)) return;
+    if (typeof node[0] === 'number' && typeof node[1] === 'number') {
+      const x = node[0];
+      const y = node[1];
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        if (x < acc[0]) acc[0] = x;
+        if (y < acc[1]) acc[1] = y;
+        if (x > acc[2]) acc[2] = x;
+        if (y > acc[3]) acc[3] = y;
+        found = true;
+      }
+      return;
+    }
+    for (const child of node) visit(child);
+  };
+  visit(coordinates);
+
+  const result = found ? acc : null;
+  bboxMemo.set(feature as object, result);
+  return result ?? undefined;
+}
+
+/**
+ * Filter a full collection to features whose geometry AABB intersects the
+ * requested viewport `[minX,minY,maxX,maxY]` (standard box-overlap test). Pure,
+ * in-memory, and fast — never fetches, never throws. Features are passed through
+ * untouched so the existing MapLibre paint keeps working.
+ */
+export function filterByBbox(
+  collection: DamageFeatureCollection,
+  bbox: [number, number, number, number],
+): DamageFeatureCollection {
+  const [minX, minY, maxX, maxY] = bbox;
+  const features = collection.features.filter((feature) => {
+    const b = featureBbox(feature);
+    if (!b) return false;
+    return b[2] >= minX && b[0] <= maxX && b[3] >= minY && b[1] <= maxY;
+  });
+  return { type: 'FeatureCollection', features };
+}
+
+/**
+ * Serve the current event's DPM from the WARM full-set cache (15-04):
+ *   - no active event / no NASA block / no `dpm` FeatureServer
+ *       -> empty collection, source 'empty', NO upstream fetch;
+ *   - full set NOT cached yet -> kick a BACKGROUND warm (non-blocking) and return
+ *       an empty collection with source 'warming' — NEVER block the request for
+ *       the ~110s extraction (degrade-safe; the layer appears once warm);
+ *   - full set cached, `?bbox` present -> filter to the features whose geometry
+ *       AABB intersects the viewport (in-memory, microseconds), source 'cache';
+ *   - full set cached, no `?bbox` -> return the full (capped) set, source 'cache'.
+ * NEVER throws, NEVER returns 5xx. Attribution + disclaimer come from
+ * `event.nasa` (ND-06); on the empty/no-block path both are ''.
+ */
+export async function fetchNasaDpm(
+  opts: { bbox?: string; eventId?: string } = {},
+  deps: NasaDeps = defaultDeps,
+): Promise<NasaDamageResult> {
+  const eventId = opts.eventId ?? currentEventId();
+  const event = getEvent(eventId);
+  const nasa = event?.nasa;
+  const dpm = nasa?.featureServers.find((fs) => fs.key === 'dpm');
+  const attribution = nasa?.attribution ?? '';
+  const disclaimer = nasa?.disclaimer ?? '';
+
+  // Fail-closed short-circuit — no upstream fetch.
+  if (!event || !nasa || !dpm) {
+    return { collection: emptyCollection(), attribution, source: 'empty', disclaimer };
+  }
+
+  const full = deps.cache.get(fullSetKey(eventId));
+
+  // Not warmed yet: trigger the background warm and return warming + empty NOW.
+  // The fire-and-forget warm fills the cache so subsequent requests are served;
+  // we never block the request for the ~110s full extraction.
+  if (!full) {
+    void warmNasaDpm({ eventId }, deps).catch(() => {});
+    return { collection: emptyCollection(), attribution, source: 'warming', disclaimer };
+  }
+
+  // An OPTIONAL client `?bbox` is already minLng,minLat,maxLng,maxLat (ArcGIS
+  // envelope order == [minX,minY,maxX,maxY]); filter the warm set in memory to
+  // just the viewport. Absent it, return the full (capped) set as today.
+  const clientBbox = parseBboxParam(opts.bbox);
+  if (!clientBbox) {
+    return { collection: full, attribution, source: 'cache', disclaimer };
+  }
+
+  const subset = filterByBbox(full, clientBbox);
+  return { collection: subset, attribution, source: 'cache', disclaimer };
 }

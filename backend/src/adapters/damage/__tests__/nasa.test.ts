@@ -7,6 +7,8 @@ import {
   bboxToEnvelope,
   buildDpmQueryUrl,
   mergeArcgisPages,
+  filterByBbox,
+  warmNasaDpm,
   fetchNasaDpm,
 } from '../nasa.js';
 import { DamageCache } from '../cache.js';
@@ -175,35 +177,64 @@ describe('mergeArcgisPages — pass-through + merge', () => {
   });
 });
 
-// --- Task 2: fetchNasaDpm service ----------------------------------------
+// --- Task 2: filterByBbox (viewport AABB filter) -------------------------
 
-describe('fetchNasaDpm — live, filtered, paginated', () => {
-  it('paginates the filtered DPM query and merges pages, source live', async () => {
+describe('filterByBbox — geometry-AABB viewport filter', () => {
+  const full = mergeArcgisPages([page1, page2]); // fids 1..4, disjoint polygons
+
+  it('keeps only features whose geometry AABB intersects the viewport', () => {
+    // A tight box around fid1 only ([-66.9,10.5]..[-66.8,10.6]).
+    const subset = filterByBbox(full, [-66.92, 10.49, -66.79, 10.61]);
+    const fids = subset.features.map((f) => (f as { properties: { fid: number } }).properties.fid);
+    expect(fids).toEqual([1]);
+  });
+
+  it('returns more features as the viewport grows (count scales with size)', () => {
+    const small = filterByBbox(full, [-66.92, 10.49, -66.79, 10.61]); // fid1
+    const medium = filterByBbox(full, [-66.92, 10.39, -66.59, 10.61]); // fid1+2
+    const large = filterByBbox(full, [-67.0, 10.0, -66.0, 11.0]); // all 4
+    expect(small.features.length).toBeLessThan(medium.features.length);
+    expect(medium.features.length).toBeLessThan(large.features.length);
+    expect(large.features).toHaveLength(4);
+  });
+
+  it('returns an empty collection for a viewport that intersects nothing', () => {
+    const none = filterByBbox(full, [10, 10, 11, 11]); // far away
+    expect(none.features).toHaveLength(0);
+    expect(none.type).toBe('FeatureCollection');
+  });
+
+  it('passes features through untouched (properties preserved)', () => {
+    const subset = filterByBbox(full, [-67.0, 10.0, -66.0, 11.0]);
+    expect(subset.features).toContainEqual(page1.features[0]);
+  });
+});
+
+// --- Task 3: warmNasaDpm (full-set extraction) ---------------------------
+
+describe('warmNasaDpm — full OID-cursor extraction into the stable cache', () => {
+  it('paginates the filtered DPM query and caches the merged full set', async () => {
     const fetchJson = routedFetch();
-    const result = await fetchNasaDpm({}, deps(fetchJson));
-
-    expect(result.source).toBe('live');
-    expect(result.collection.features).toHaveLength(4); // 3 (page1) + 1 (page2)
-    expect(result.attribution).toContain('NASA-JPL');
-    expect(result.disclaimer).toContain('Experimental');
+    const shared = deps(fetchJson);
+    const collection = await warmNasaDpm({}, shared);
+    expect(collection?.features).toHaveLength(4); // 3 (page1) + 1 (page2)
     // page1 (full, 3==pageSize) then page2 (short) => exactly 2 fetches
     expect(fetchJson).toHaveBeenCalledTimes(2);
   });
 
-  it('always sends where=damage=1 + resultRecordCount on every fetched url (ND-03)', async () => {
+  it('always sends where=damage=1 + resultRecordCount and NO spatial envelope (ND-03)', async () => {
     const fetchJson = routedFetch();
-    await fetchNasaDpm({}, deps(fetchJson));
+    await warmNasaDpm({}, deps(fetchJson));
     for (const call of fetchJson.mock.calls) {
       const url = call[0] as string;
       expect(url).toContain('where=damage%3D1');
       expect(url).toContain('resultRecordCount=');
+      expect(url).not.toContain('geometry=');
       expect(isAllowedArcgisUrl(url.split('?')[0])).toBe(true);
     }
   });
 
   it('caps pagination at the hard page cap when every page is full (DoS backstop)', async () => {
-    // Always return a FULL page whose fids strictly advance past the cursor, so the
-    // loop never sees a short page and never stalls — only the hard cap stops it.
     const fetchJson = vi.fn(async (url: string) => {
       const where = new URL(url).searchParams.get('where') ?? '';
       const base = Number(where.match(/fid>(-?\d+)/)?.[1] ?? -1) + 1;
@@ -216,47 +247,143 @@ describe('fetchNasaDpm — live, filtered, paginated', () => {
         })),
       };
     });
-    const result = await fetchNasaDpm({}, deps(fetchJson));
-    expect(result.source).toBe('live');
+    await warmNasaDpm({}, deps(fetchJson));
     expect(fetchJson.mock.calls.length).toBe(40); // hard page cap
   });
 
-  it('caches a fresh in-TTL second identical call without re-querying ArcGIS', async () => {
+  it('is idempotent — a second warm with a fresh cache does not re-query', async () => {
     const fetchJson = routedFetch();
     const shared = deps(fetchJson);
-    const first = await fetchNasaDpm({}, shared);
-    const second = await fetchNasaDpm({}, shared);
-    expect(first.source).toBe('live');
-    expect(second.source).toBe('cache');
-    expect(second.collection).toEqual(first.collection);
-    expect(fetchJson).toHaveBeenCalledTimes(2); // only the first call hit the network
+    await warmNasaDpm({}, shared);
+    await warmNasaDpm({}, shared);
+    expect(fetchJson).toHaveBeenCalledTimes(2); // second warm served from cache
   });
 
-  it('caches a ?bbox override separately from the country-bbox default', async () => {
+  it('de-dupes concurrent warms into ONE upstream extraction', async () => {
     const fetchJson = routedFetch();
     const shared = deps(fetchJson);
-    await fetchNasaDpm({}, shared); // country bbox
-    const override = await fetchNasaDpm({ bbox: '-70,9,-66,11' }, shared);
-    expect(override.source).toBe('live'); // different cache key => re-queried
-    // the override envelope is joined as-is (already ArcGIS order)
-    const overrideUrls = fetchJson.mock.calls
-      .map((c) => c[0] as string)
-      .filter((u) => u.includes('geometry=-70'));
-    expect(overrideUrls.length).toBeGreaterThan(0);
+    const [a, b] = await Promise.all([warmNasaDpm({}, shared), warmNasaDpm({}, shared)]);
+    expect(a?.features).toHaveLength(4);
+    expect(b?.features).toHaveLength(4);
+    expect(fetchJson).toHaveBeenCalledTimes(2); // not 4 — the in-flight warm was joined
   });
-});
 
-describe('fetchNasaDpm — partial tolerance', () => {
-  it('keeps pages already collected when a later page fails (one slow page does not nuke everything)', async () => {
+  it('keeps pages already collected when a later page fails, but does NOT cache the partial set', async () => {
     const fetchJson = vi
       .fn()
       .mockImplementationOnce(async () => page1) // full page -> continue
       .mockRejectedValue(new Error('slow page timeout')); // page 2 dies on both attempts
-    const result = await fetchNasaDpm({}, deps(fetchJson));
-    expect(result.source).toBe('live'); // partial, still served live
-    expect(result.collection.features).toHaveLength(3); // page1 kept
+    const shared = deps(fetchJson);
+    const collection = await warmNasaDpm({}, shared);
+    expect(collection?.features).toHaveLength(3); // page1 returned to the caller
     // page1 (1) + page2 initial attempt + 2 retries (3) = 4 calls before giving up
     expect(fetchJson).toHaveBeenCalledTimes(4);
+    // A truncated set must not be pinned for 6h — the next request re-warms.
+    const result = await fetchNasaDpm({}, shared);
+    expect(result.source).toBe('warming');
+  });
+
+  it('returns undefined and does not cache when the whole extraction fails', async () => {
+    const fetchJson = vi.fn().mockRejectedValue(new Error('ArcGIS down'));
+    const shared = deps(fetchJson);
+    const collection = await warmNasaDpm({}, shared);
+    expect(collection).toBeUndefined();
+    // a follow-up fetch still sees no cache => warming, and retries the warm
+    const result = await fetchNasaDpm({}, shared);
+    expect(result.source).toBe('warming');
+  });
+
+  it('returns undefined when the current event has no NASA block, without fetching', async () => {
+    const original = process.env.GR_CURRENT_EVENT;
+    process.env.GR_CURRENT_EVENT = 'no-such-event';
+    try {
+      const fetchJson = routedFetch();
+      const collection = await warmNasaDpm({}, deps(fetchJson));
+      expect(collection).toBeUndefined();
+      expect(fetchJson).not.toHaveBeenCalled();
+    } finally {
+      if (original === undefined) delete process.env.GR_CURRENT_EVENT;
+      else process.env.GR_CURRENT_EVENT = original;
+    }
+  });
+});
+
+// --- Task 4: fetchNasaDpm (warm-cache viewport serving) ------------------
+
+describe('fetchNasaDpm — warming state', () => {
+  it('returns empty + source warming and kicks a background warm on a cold cache', async () => {
+    const fetchJson = routedFetch();
+    const shared = deps(fetchJson);
+    const result = await fetchNasaDpm({}, shared);
+    expect(result.source).toBe('warming');
+    expect(result.collection).toEqual({ type: 'FeatureCollection', features: [] });
+    // attribution + disclaimer are still surfaced while warming (ND-06)
+    expect(result.attribution).toContain('NASA-JPL');
+    expect(result.disclaimer).toContain('Experimental');
+    // the background warm eventually fills the cache; a later request is served
+    await warmNasaDpm({}, shared);
+    const warmed = await fetchNasaDpm({}, shared);
+    expect(warmed.source).toBe('cache');
+    expect(warmed.collection.features).toHaveLength(4);
+  });
+
+  it('does not block the request for the extraction (returns before warm resolves)', async () => {
+    let resolvePage: (v: unknown) => void = () => {};
+    const gate = new Promise((r) => {
+      resolvePage = r;
+    });
+    const fetchJson = vi.fn(async () => {
+      await gate; // upstream hangs
+      return page2;
+    });
+    const result = await fetchNasaDpm({}, deps(fetchJson));
+    expect(result.source).toBe('warming'); // returned WITHOUT awaiting the hung fetch
+    resolvePage(page2); // let the background warm settle so the test exits cleanly
+  });
+});
+
+describe('fetchNasaDpm — warm-cache serving', () => {
+  it('serves the full (capped) set from cache when no bbox is given', async () => {
+    const fetchJson = routedFetch();
+    const shared = deps(fetchJson);
+    await warmNasaDpm({}, shared); // pre-warm
+    const result = await fetchNasaDpm({}, shared);
+    expect(result.source).toBe('cache');
+    expect(result.collection.features).toHaveLength(4);
+    expect(fetchJson).toHaveBeenCalledTimes(2); // serving did not re-query
+  });
+
+  it('filters the warm set to the requested ?bbox viewport (in-memory, no fetch)', async () => {
+    const fetchJson = routedFetch();
+    const shared = deps(fetchJson);
+    await warmNasaDpm({}, shared);
+    const callsAfterWarm = fetchJson.mock.calls.length;
+    // A box around fid1 only.
+    const result = await fetchNasaDpm({ bbox: '-66.92,10.49,-66.79,10.61' }, shared);
+    expect(result.source).toBe('cache');
+    const fids = result.collection.features.map(
+      (f) => (f as { properties: { fid: number } }).properties.fid,
+    );
+    expect(fids).toEqual([1]);
+    expect(fetchJson).toHaveBeenCalledTimes(callsAfterWarm); // NO extra fetch for the subset
+  });
+
+  it('scales the subset with the viewport size', async () => {
+    const fetchJson = routedFetch();
+    const shared = deps(fetchJson);
+    await warmNasaDpm({}, shared);
+    const small = await fetchNasaDpm({ bbox: '-66.92,10.49,-66.79,10.61' }, shared);
+    const large = await fetchNasaDpm({ bbox: '-67,10,-66,11' }, shared);
+    expect(small.collection.features.length).toBeLessThan(large.collection.features.length);
+    expect(large.collection.features).toHaveLength(4);
+  });
+
+  it('ignores a malformed ?bbox and returns the full set', async () => {
+    const fetchJson = routedFetch();
+    const shared = deps(fetchJson);
+    await warmNasaDpm({}, shared);
+    const result = await fetchNasaDpm({ bbox: 'garbage' }, shared);
+    expect(result.collection.features).toHaveLength(4);
   });
 });
 
@@ -276,30 +403,6 @@ describe('fetchNasaDpm — short-circuits (no fetch)', () => {
       if (original === undefined) delete process.env.GR_CURRENT_EVENT;
       else process.env.GR_CURRENT_EVENT = original;
     }
-  });
-});
-
-describe('fetchNasaDpm — graceful degradation', () => {
-  it('degrades to stale cache when upstream fails after a prior success', async () => {
-    const fetchJson = vi
-      .fn()
-      .mockImplementationOnce(async () => page1)
-      .mockImplementationOnce(async () => page2)
-      .mockRejectedValue(new Error('ArcGIS down'));
-    // ttlMs -1 forces the second call to be a fresh miss that re-fetches and fails.
-    const shared = deps(fetchJson, new DamageCache({ ttlMs: -1 }));
-    const first = await fetchNasaDpm({}, shared);
-    const second = await fetchNasaDpm({}, shared);
-    expect(first.source).toBe('live');
-    expect(second.source).toBe('cache'); // stale served
-    expect(second.collection).toEqual(first.collection);
-  });
-
-  it('returns empty (source empty) when upstream fails with no cache', async () => {
-    const fetchJson = vi.fn().mockRejectedValue(new Error('ArcGIS down'));
-    const result = await fetchNasaDpm({}, deps(fetchJson));
-    expect(result.source).toBe('empty');
-    expect(result.collection).toEqual({ type: 'FeatureCollection', features: [] });
   });
 
   it('never throws on upstream failure', async () => {
