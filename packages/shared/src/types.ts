@@ -470,3 +470,50 @@ export interface AidSiteFeatureCollection {
   type: 'FeatureCollection';
   features: AidSiteFeature[];
 }
+
+/**
+ * ---------------------------------------------------------------------------
+ * Earthquake contracts (USGS fdsnws + FUNVISIS via SismosVE)
+ * ---------------------------------------------------------------------------
+ * Normalized, MapLibre-facing shape for a recent earthquake. Two independent
+ * gateway routes feed this same contract so the Situation map renders both
+ * sources with one layer style:
+ *   - `/api/usgs/earthquakes`     → USGS fdsnws (global, bbox-filtered);
+ *   - `/api/funvisis/earthquakes` → FUNVISIS data federated via the OSS
+ *     SismosVE feed (Venezuela-local). Attribution "FUNVISIS (vía SismosVE)"
+ *     is REQUIRED on this data.
+ * The frontend never touches either upstream nor its rate budget — the volatile
+ * TTL cache and degrade-safe behavior live in the gateway.
+ */
+export interface EarthquakeFeatureProperties {
+  /** Upstream event id (USGS event id or SismosVE id). */
+  id: string;
+  /** Magnitude, or null when the source did not report one. */
+  mag: number | null;
+  /** Human place description (USGS `place` / SismosVE `addressFormatted`). */
+  place: string;
+  /** Event time as epoch milliseconds, or null when unparseable. */
+  time: number | null;
+  /** Depth in kilometers, when reported. */
+  depth?: number | null;
+  /** Upstream deep-link for the event, when present. */
+  url?: string;
+  /** Attribution label, e.g. "USGS" or "FUNVISIS (vía SismosVE)". */
+  source: string;
+}
+
+/** A GeoJSON Point Feature carrying normalized earthquake properties. */
+export interface EarthquakeFeature {
+  type: 'Feature';
+  geometry: SituationPointGeometry;
+  properties: EarthquakeFeatureProperties;
+}
+
+/**
+ * GeoJSON FeatureCollection of recent earthquakes. The stable contract the
+ * Situation map's earthquake layers (USGS + FUNVISIS) consume.
+ */
+export interface EarthquakeFeatureCollection {
+  type: 'FeatureCollection';
+  features: EarthquakeFeature[];
+}

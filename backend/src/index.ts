@@ -6,6 +6,7 @@ import { ProviderGateway } from './gateway/ProviderGateway.js'
 import { VenezuelaTeBuscaAdapter } from './adapters/venezuelatebusca/adapter.js'
 import { fetchEonetEvents } from './adapters/eonet/service.js'
 import { fetchAidSites } from './adapters/sitios/service.js'
+import { fetchUsgsEarthquakes } from './adapters/usgs/service.js'
 
 /**
  * Build and configure the Provider Gateway HTTP app. Exported so it can run
@@ -80,6 +81,19 @@ export function buildApp(): FastifyInstance {
     const result = await fetchAidSites({ tipo, municipio })
     reply.header('X-Sitios-Source', result.source)
     reply.header('X-Attribution', 'Venezuela Reporta')
+    return result.collection
+  })
+
+  // Situation map earthquake layer (priority source). Proxies USGS fdsnws
+  // /query as cached, normalized GeoJSON. The frontend MUST hit this gateway
+  // route, never USGS directly — the volatile TTL cache lives here. bbox comes
+  // from the shared country registry ([W,N,E,S]); start from the timeline
+  // preset. Degrades gracefully (X-USGS-Source reflects it), never returns 5xx.
+  fastify.get('/api/usgs/earthquakes', async (request, reply) => {
+    const { bbox, start } = request.query as { bbox?: string; start?: string }
+    const result = await fetchUsgsEarthquakes({ bbox, start })
+    reply.header('X-USGS-Source', result.source)
+    reply.header('X-Attribution', 'USGS')
     return result.collection
   })
 
