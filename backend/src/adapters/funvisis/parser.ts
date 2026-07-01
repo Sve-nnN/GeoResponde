@@ -17,14 +17,15 @@ export interface SismosVeRawFeature {
     coordinates?: unknown;
   } | null;
   properties?: {
-    /** Magnitude. */
-    value?: number | null;
-    depth?: number | null;
+    /** Magnitude — SismosVE sends it as a numeric string, e.g. "2.0". */
+    value?: number | string | null;
+    /** Depth — SismosVE sends it as a string with unit, e.g. "4.0 km". */
+    depth?: number | string | null;
     /** Human place description. */
     addressFormatted?: string | null;
-    /** Local date, e.g. "2026-06-30". */
+    /** Local date — SismosVE uses DD-MM-YYYY, e.g. "01-07-2026". */
     date?: string | null;
-    /** Local time, e.g. "14:32:10". */
+    /** Local time, e.g. "13:39" or "14:32:10". */
     time?: string | null;
     country?: string | null;
     url?: string | null;
@@ -62,16 +63,46 @@ function str(value: unknown): string | undefined {
 }
 
 /**
+ * Coerce a numeric field that may arrive as a number or a string (optionally
+ * with a unit, e.g. "4.0 km" or "2.0"), returning the leading finite number or
+ * null. Defensive against garbage.
+ */
+function toNum(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') {
+    const n = parseFloat(value.trim());
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Normalize a SismosVE date to `YYYY-MM-DD`. SismosVE uses `DD-MM-YYYY`
+ * (e.g. "01-07-2026"); an already-ISO `YYYY-MM-DD` is passed through. Returns
+ * undefined when the shape is unrecognized.
+ */
+function normalizeDate(date: string): string | undefined {
+  const parts = date.split('-');
+  if (parts.length !== 3) return undefined;
+  const [a, b, c] = parts;
+  if (a.length === 4) return `${a}-${b}-${c}`; // already YYYY-MM-DD
+  if (c.length === 4) return `${c}-${b}-${a}`; // DD-MM-YYYY -> YYYY-MM-DD
+  return undefined;
+}
+
+/**
  * Combine SismosVE `date` + `time` into an epoch (ms), or null when unparseable.
- * Tries `${date}T${time}` first (ISO-ish), then the date alone.
+ * Handles SismosVE's DD-MM-YYYY date and HH:MM(:SS) time.
  */
 function toEpoch(date?: string | null, time?: string | null): number | null {
-  const d = str(date);
-  if (!d) return null;
+  const raw = str(date);
+  if (!raw) return null;
+  const iso = normalizeDate(raw);
+  if (!iso) return null;
   const t = str(time);
-  const candidates = t ? [`${d}T${t}`, `${d} ${t}`, d] : [d];
-  for (const c of candidates) {
-    const epoch = Date.parse(c);
+  const candidates = t ? [`${iso}T${t}`, `${iso} ${t}`, iso] : [iso];
+  for (const candidate of candidates) {
+    const epoch = Date.parse(candidate);
     if (Number.isFinite(epoch)) return epoch;
   }
   return null;
@@ -91,7 +122,7 @@ function toFeature(raw: SismosVeRawFeature): EarthquakeFeature | undefined {
   if (!inRange(lng, lat)) return undefined;
 
   const p = raw.properties ?? {};
-  const depth = typeof p.depth === 'number' ? p.depth : undefined;
+  const depth = toNum(p.depth);
   const url = str(p.url);
   const safeUrl = url && /^https?:\/\//i.test(url) ? url : undefined;
 
@@ -100,10 +131,10 @@ function toFeature(raw: SismosVeRawFeature): EarthquakeFeature | undefined {
     geometry: { type: 'Point', coordinates: [lng, lat] },
     properties: {
       id: raw.id != null ? String(raw.id) : '',
-      mag: typeof p.value === 'number' ? p.value : null,
+      mag: toNum(p.value),
       place: str(p.addressFormatted) ?? '',
       time: toEpoch(p.date, p.time),
-      ...(depth !== undefined ? { depth } : {}),
+      ...(depth !== null ? { depth } : {}),
       ...(safeUrl ? { url: safeUrl } : {}),
       source: FUNVISIS_ATTRIBUTION,
     },

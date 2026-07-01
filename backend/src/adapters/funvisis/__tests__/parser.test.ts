@@ -13,7 +13,7 @@ describe('toEarthquakeCollection — SismosVE normalization', () => {
     expect(c.features.map((f) => f.properties.id)).toEqual(['syn_fv_001', 'syn_fv_002']);
   });
 
-  it('maps value→mag, addressFormatted→place, depth, and date+time→epoch', () => {
+  it('coerces string value→mag, depth "12.0 km"→12, and DD-MM-YYYY date→epoch', () => {
     const c = toEarthquakeCollection(fixture);
     const f = c.features[0];
     expect(f.geometry.coordinates).toEqual([-68.9, 10.5]);
@@ -21,7 +21,7 @@ describe('toEarthquakeCollection — SismosVE normalization', () => {
     expect(f.properties.place).toContain('Barquisimeto');
     expect(f.properties.depth).toBe(12.0);
     expect(typeof f.properties.time).toBe('number');
-    expect(f.properties.time).toBe(Date.parse('2026-06-30T14:32:10'));
+    expect(f.properties.time).toBe(Date.parse('2026-06-30T14:32'));
   });
 
   it('tags every feature with the required FUNVISIS (vía SismosVE) attribution', () => {
