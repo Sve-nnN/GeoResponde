@@ -108,7 +108,8 @@
     "status": "active",
     "adapter": "DesaparecidosTerremotoAdapter",
     "capabilities": [
-      "search"
+      "search",
+      "submission"
     ]
   },
   {

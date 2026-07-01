@@ -91,6 +91,7 @@
   adapter: DesaparecidosTerremotoAdapter
   capabilities:
     - search
+    - submission
 
 - id: prov-hazlohoy
   display_name: Hazlo Hoy Terremoto

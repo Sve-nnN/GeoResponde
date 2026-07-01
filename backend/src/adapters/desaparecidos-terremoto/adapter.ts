@@ -1,7 +1,15 @@
-import { BaseAdapter } from '../BaseAdapter.js';
-import { HumanitarianProvider, NormalizedSearchResult, Report, SubmissionResult } from '@georesponde/shared';
+import { BaseAdapter, SubmitOptions } from '../BaseAdapter.js';
+import {
+  HumanitarianProvider,
+  NormalizedSearchResult,
+  Report,
+  ReportTopic,
+  SubmissionMode,
+  SubmissionResult,
+} from '@georesponde/shared';
 import { fetchJson } from '../../transports/rest/client.js';
 import { filterAndNormalizePlataformas } from './parser.js';
+import { buildDeepLink, buildManualText } from '../../gateway/submissionModes.js';
 
 const PLATAFORMAS_ENDPOINT =
   'https://desaparecidos-terremoto-api.theempire.tech/api/plataformas';
@@ -14,6 +22,12 @@ const PLATAFORMAS_ENDPOINT =
  */
 export class DesaparecidosTerremotoAdapter implements BaseAdapter {
   provider: HumanitarianProvider;
+  /**
+   * No write API (persons endpoint is reCAPTCHA-blocked). REP-08 tier ladder:
+   * the user submits on the provider's OWN domain via a prefilled deep link.
+   */
+  submissionMode: SubmissionMode = 'deep_link';
+  submissionTopics: readonly ReportTopic[] = ['missing-person'];
 
   constructor(providerConfig: HumanitarianProvider) {
     this.provider = providerConfig;
@@ -29,7 +43,32 @@ export class DesaparecidosTerremotoAdapter implements BaseAdapter {
     }
   }
 
-  async submit(_report: Report): Promise<SubmissionResult> {
-    return { provider: this.provider.id, mode: 'dry-run', status: 'skipped' };
+  /**
+   * REP-08 ethical handoff. Performs NO network write and NO scraping — it
+   * builds the tiered action the USER acts on: a prefilled deep link to the
+   * provider's own public form (non-sensitive fields only; the cédula never
+   * enters the URL) plus a copy-to-clipboard manual body (all fields) as the
+   * fallback tier. The constructed URL is never logged server-side.
+   */
+  async submit(report: Report, opts: SubmitOptions = {}): Promise<SubmissionResult> {
+    // The provider's own domain is the deep-link target. We prefill its public
+    // report form; the exact form path is unknown, so we target the site root
+    // (the user lands on the provider's own form and submits there).
+    const deepLinkBase = this.provider.website;
+
+    return {
+      provider: this.provider.id,
+      mode: 'dry-run',
+      status: 'ok',
+      idempotencyKey: opts.idempotencyKey,
+      action: {
+        tier: 'deep_link',
+        actionUrl: buildDeepLink(deepLinkBase, report),
+        // Manual/mailto fallback body (sensitive fields allowed here; the user
+        // copies on their own device). Intake mailto address, when needed, is a
+        // documented placeholder: contacto@desaparecidosterremotovenezuela.com.
+        body: buildManualText(report),
+      },
+    };
   }
 }
