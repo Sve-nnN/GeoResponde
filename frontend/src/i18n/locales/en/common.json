@@ -128,6 +128,11 @@
       "status": "Status",
       "preview": "This is what would be forwarded:",
       "networkError": "The report could not be submitted. Please try again."
+    },
+    "errors": {
+      "missing": "This field is required.",
+      "invalid": "Please enter a valid value.",
+      "formIncomplete": "Complete the required fields (*) to enable submit."
     }
   },
   "about": {

@@ -172,6 +172,83 @@ export const REPORT_TOPICS: Record<ReportTopic, ReportTopicDef> = {
 };
 
 /**
+ * Why a required field failed validation. `missing` = empty/absent;
+ * `invalid` = present but malformed for its type (bad number, coords, or a
+ * select value outside its options).
+ */
+export type ReportFieldError = 'missing' | 'invalid';
+
+/** Result of validating a report's fields against its topic definition. */
+export interface ReportValidation {
+  ok: boolean;
+  /** Field name → why it failed. Empty when `ok` is true. */
+  errors: Record<string, ReportFieldError>;
+}
+
+/** True when a value is absent or an empty/whitespace-only string. */
+function isEmpty(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  if (typeof value === 'string') return value.trim() === '';
+  return false;
+}
+
+/**
+ * Validate a report's fields against its topic definition — the single source
+ * of truth shared by the form (disable submit, show errors) and the gateway
+ * route (reject with 400). Required fields must be non-empty; any provided
+ * value must be well-formed for its declared type. Unknown topics fail closed.
+ */
+export function validateReport(
+  topic: string,
+  fields: Record<string, unknown> | undefined,
+): ReportValidation {
+  const errors: Record<string, ReportFieldError> = {};
+  const def = (REPORT_TOPICS as Record<string, ReportTopicDef>)[topic];
+  if (!def) return { ok: false, errors };
+
+  const data = fields ?? {};
+  for (const field of def.fields) {
+    const value = data[field.name];
+    const empty = isEmpty(value);
+
+    if (field.required && empty) {
+      errors[field.name] = 'missing';
+      continue;
+    }
+    if (empty) continue; // optional + empty → fine
+
+    switch (field.type) {
+      case 'number': {
+        const n = typeof value === 'number' ? value : Number(value);
+        if (!Number.isFinite(n)) errors[field.name] = 'invalid';
+        break;
+      }
+      case 'select': {
+        if (!field.options || !field.options.includes(value as string)) {
+          errors[field.name] = 'invalid';
+        }
+        break;
+      }
+      case 'coords': {
+        // Accept a [lng, lat] tuple of finite numbers in range.
+        const ok =
+          Array.isArray(value) &&
+          value.length === 2 &&
+          value.every((c) => Number.isFinite(c)) &&
+          Math.abs(value[0]) <= 180 &&
+          Math.abs(value[1]) <= 90;
+        if (!ok) errors[field.name] = 'invalid';
+        break;
+      }
+      default:
+        break; // text/textarea: non-empty already satisfied
+    }
+  }
+
+  return { ok: Object.keys(errors).length === 0, errors };
+}
+
+/**
  * A structured, provider-agnostic report the user composes. GeoResponde is a
  * federator, not a system of record: this crosses to the gateway, gets
  * forwarded, and only a receipt is kept — the body is never persisted here.

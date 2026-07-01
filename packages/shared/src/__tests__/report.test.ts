@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   REPORT_TOPICS,
   toReport,
+  validateReport,
   type Report,
   type SubmissionResult,
   type ReportTopic,
@@ -108,3 +109,46 @@ describe('SubmissionResult shape', () => {
 // Type-level guard: ReportTopic must stay the three-topic union.
 const _topics: ReportTopic[] = ['missing-person', 'resource-need', 'shelter-status'];
 void _topics;
+
+describe('validateReport', () => {
+  it('flags all missing required fields for an empty report', () => {
+    const v = validateReport('missing-person', {});
+    expect(v.ok).toBe(false);
+    expect(v.errors).toMatchObject({ fullName: 'missing' });
+  });
+
+  it('treats a whitespace-only required field as missing', () => {
+    const v = validateReport('resource-need', { resourceType: '   ', location: 'Caracas' });
+    expect(v.ok).toBe(false);
+    expect(v.errors.resourceType).toBe('missing');
+  });
+
+  it('passes when every required field is present', () => {
+    const v = validateReport('resource-need', { resourceType: 'water', location: 'Caracas' });
+    expect(v.ok).toBe(true);
+    expect(v.errors).toEqual({});
+  });
+
+  it('rejects a non-numeric number field but allows optional empties', () => {
+    const v = validateReport('missing-person', { fullName: 'Ana', age: 'NaNish' });
+    expect(v.ok).toBe(false);
+    expect(v.errors.age).toBe('invalid');
+  });
+
+  it('rejects a select value outside its options', () => {
+    const v = validateReport('shelter-status', {
+      facilityName: 'X', facilityType: 'bunker', location: 'Caracas',
+    });
+    expect(v.errors.facilityType).toBe('invalid');
+  });
+
+  it('rejects malformed coords but accepts a valid [lng,lat] tuple', () => {
+    expect(validateReport('missing-person', { fullName: 'Ana', lastSeenCoords: [999, 0] }).errors.lastSeenCoords).toBe('invalid');
+    const ok = validateReport('missing-person', { fullName: 'Ana', lastSeenCoords: [-66.9, 10.5] });
+    expect(ok.ok).toBe(true);
+  });
+
+  it('fails closed for an unknown topic', () => {
+    expect(validateReport('not-a-topic', { anything: 'x' }).ok).toBe(false);
+  });
+});

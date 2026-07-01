@@ -1,7 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify'
 import cors from '@fastify/cors'
 import { pathToFileURL } from 'url'
-import { REPORT_TOPICS, type Report, type SubmissionReport } from '@georesponde/shared'
+import { REPORT_TOPICS, validateReport, type Report, type SubmissionReport, type ReportFieldError } from '@georesponde/shared'
 import { ProviderGateway } from './gateway/ProviderGateway.js'
 import { VenezuelaTeBuscaAdapter } from './adapters/venezuelatebusca/adapter.js'
 import { fetchEonetEvents } from './adapters/eonet/service.js'
@@ -72,13 +72,22 @@ export function buildApp(): FastifyInstance {
   // requires an explicit ?dryRun=0 (or false). Per the owner directive nothing is
   // persisted — GeoResponde is a federator, not a system of record. Sensitive
   // fields (cédula, reporter.contact) are never logged here.
-  fastify.post('/api/report', async (request, reply): Promise<SubmissionReport | { error: string }> => {
+  fastify.post('/api/report', async (request, reply): Promise<SubmissionReport | { error: string; fields?: Record<string, ReportFieldError> }> => {
     const report = request.body as Partial<Report> | undefined
     const topic = report?.topic
 
     if (!topic || !(topic in REPORT_TOPICS)) {
       reply.code(400)
       return { error: 'unknown topic' }
+    }
+
+    // Validate required/typed fields server-side — never trust the client. An
+    // empty or malformed report is rejected before it reaches the gateway, so
+    // we never forward blank reports to trusted providers.
+    const validation = validateReport(topic, report?.fields)
+    if (!validation.ok) {
+      reply.code(400)
+      return { error: 'validation', fields: validation.errors }
     }
 
     await ensureReady()

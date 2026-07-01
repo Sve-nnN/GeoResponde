@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Report as ReportModel, ReportTopic, SubmissionResult } from '@georesponde/shared';
+import { validateReport, type Report as ReportModel, type ReportTopic, type SubmissionResult } from '@georesponde/shared';
 import { useTranslation } from 'react-i18next';
 import { TopicSelector } from '../components/report/TopicSelector';
 import { ReportFields } from '../components/report/ReportFields';
@@ -11,14 +11,22 @@ export function Report() {
   const { t } = useTranslation();
   const [topic, setTopic] = useState<ReportTopic | null>(null);
   const [fields, setFields] = useState<Record<string, unknown>>({});
+  const [touched, setTouched] = useState<Set<string>>(new Set());
   const [acknowledgedAt, setAcknowledgedAt] = useState<string | null>(null);
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const validation = topic ? validateReport(topic, fields) : { ok: false, errors: {} };
+
   const handleTopicChange = (next: ReportTopic) => {
     setTopic(next);
     setFields({});
+    setTouched(new Set());
     setResult(null);
+  };
+
+  const handleBlur = (name: string) => {
+    setTouched((prev) => (prev.has(name) ? prev : new Set(prev).add(name)));
   };
 
   const handleFieldChange = (name: string, value: unknown) => {
@@ -33,10 +41,10 @@ export function Report() {
     });
   };
 
-  const canSubmit = topic !== null && acknowledgedAt !== null && !submitting;
+  const canSubmit = topic !== null && acknowledgedAt !== null && validation.ok && !submitting;
 
   const handleSubmit = async () => {
-    if (topic === null || acknowledgedAt === null) return;
+    if (topic === null || acknowledgedAt === null || !validation.ok) return;
     setSubmitting(true);
     setResult(null);
 
@@ -97,7 +105,14 @@ export function Report() {
 
         {topic && (
           <>
-            <ReportFields topic={topic} values={fields} onChange={handleFieldChange} />
+            <ReportFields
+              topic={topic}
+              values={fields}
+              onChange={handleFieldChange}
+              errors={validation.errors}
+              touched={touched}
+              onBlur={handleBlur}
+            />
             <ConsentGate acknowledgedAt={acknowledgedAt} onChange={setAcknowledgedAt} />
             <button
               type="button"
@@ -117,6 +132,11 @@ export function Report() {
             >
               {submitting ? t('report.submitting') : t('report.submit')}
             </button>
+            {!validation.ok && (
+              <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '10px', textAlign: 'center' }}>
+                {t('report.errors.formIncomplete')}
+              </p>
+            )}
           </>
         )}
 

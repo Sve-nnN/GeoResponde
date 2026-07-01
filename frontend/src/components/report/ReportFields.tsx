@@ -1,10 +1,13 @@
-import { REPORT_TOPICS, type ReportFieldDef, type ReportTopic } from '@georesponde/shared';
+import { REPORT_TOPICS, type ReportFieldDef, type ReportFieldError, type ReportTopic } from '@georesponde/shared';
 import { useTranslation } from 'react-i18next';
 
 interface ReportFieldsProps {
   topic: ReportTopic;
   values: Record<string, unknown>;
   onChange: (name: string, value: unknown) => void;
+  errors?: Record<string, ReportFieldError>;
+  touched?: Set<string>;
+  onBlur?: (name: string) => void;
 }
 
 const labelStyle: React.CSSProperties = {
@@ -36,7 +39,13 @@ const helperStyle: React.CSSProperties = {
  * Renders the inputs for a topic straight from REPORT_TOPICS — the form is
  * registry-driven, so adding a field/topic in @georesponde/shared is enough.
  */
-export function ReportFields({ topic, values, onChange }: ReportFieldsProps) {
+const errorStyle: React.CSSProperties = {
+  fontSize: '13px',
+  color: '#ef4444',
+  marginTop: '6px',
+};
+
+export function ReportFields({ topic, values, onChange, errors = {}, touched, onBlur }: ReportFieldsProps) {
   const { t } = useTranslation();
   const fields = REPORT_TOPICS[topic].fields;
 
@@ -118,16 +127,20 @@ export function ReportFields({ topic, values, onChange }: ReportFieldsProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '28px' }}>
-      {fields.map((field) => (
-        <div key={field.name}>
-          <label htmlFor={field.name} style={labelStyle}>
-            {t(`report.fields.${field.name}`)}
-            {field.required && <span style={{ color: '#ef4444' }}> *</span>}
-          </label>
-          {renderInput(field)}
-          {field.sensitive && <p style={helperStyle}>{t('report.sensitiveHelper')}</p>}
-        </div>
-      ))}
+      {fields.map((field) => {
+        const showError = (touched?.has(field.name) ?? false) && Boolean(errors[field.name]);
+        return (
+          <div key={field.name} onBlur={() => onBlur?.(field.name)}>
+            <label htmlFor={field.name} style={labelStyle}>
+              {t(`report.fields.${field.name}`)}
+              {field.required && <span style={{ color: '#ef4444' }}> *</span>}
+            </label>
+            {renderInput(field)}
+            {field.sensitive && <p style={helperStyle}>{t('report.sensitiveHelper')}</p>}
+            {showError && <p style={errorStyle}>{t(`report.errors.${errors[field.name]}`)}</p>}
+          </div>
+        );
+      })}
     </div>
   );
 }

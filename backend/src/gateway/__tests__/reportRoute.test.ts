@@ -56,6 +56,41 @@ describe('POST /api/report (submission router)', () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it('rejects an empty report (missing required fields) with 400 and does not forward it', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/report',
+      payload: makeReport({ fields: {} }),
+    });
+    expect(res.statusCode).toBe(400);
+    const body = res.json() as { error: string; fields?: Record<string, string> };
+    expect(body.error).toBe('validation');
+    // resource-need requires resourceType + location
+    expect(body.fields).toMatchObject({ resourceType: 'missing', location: 'missing' });
+  });
+
+  it('rejects a report whose required field is only whitespace', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/report',
+      payload: makeReport({ fields: { resourceType: '   ', location: 'Caracas' } }),
+    });
+    expect(res.statusCode).toBe(400);
+    const body = res.json() as { error: string; fields?: Record<string, string> };
+    expect(body.fields).toMatchObject({ resourceType: 'missing' });
+  });
+
+  it('rejects a report with an out-of-range select value', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/report',
+      payload: makeReport({ fields: { resourceType: 'water', location: 'Caracas', urgency: 'nope' } }),
+    });
+    expect(res.statusCode).toBe(400);
+    const body = res.json() as { error: string; fields?: Record<string, string> };
+    expect(body.fields).toMatchObject({ urgency: 'invalid' });
+  });
+
   it('accepts ?dryRun=0 and still returns a SubmissionReport (opt into live)', async () => {
     const res = await app.inject({
       method: 'POST',

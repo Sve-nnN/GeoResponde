@@ -128,6 +128,11 @@
       "status": "Estado",
       "preview": "Esto es lo que se reenviaría:",
       "networkError": "No se pudo enviar el reporte. Intente nuevamente."
+    },
+    "errors": {
+      "missing": "Este campo es obligatorio.",
+      "invalid": "Ingresa un valor válido.",
+      "formIncomplete": "Completa los campos obligatorios (*) para poder enviar."
     }
   },
   "about": {
