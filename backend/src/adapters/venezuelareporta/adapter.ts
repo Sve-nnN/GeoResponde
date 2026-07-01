@@ -37,14 +37,13 @@ export class VenezuelaReportaAdapter implements BaseAdapter {
 
   async search(query: string): Promise<NormalizedSearchResult[]> {
     try {
-      console.log(`[VenezuelaReportaAdapter] Fetching data for query: "${query}"`);
-
+      // Never log the query: on a person registry it is a name or cédula (PII).
       const url = `${API_BASE}?q=${encodeURIComponent(query)}&limit=10`;
       const response = await fetchJson<VenezuelaReportaResponse>(url, { timeoutMs: 10000 });
 
       const normalizedResults = parseVenezuelaReportaResponse(response);
 
-      console.log(`[VenezuelaReportaAdapter] Extracted ${normalizedResults.length} normalized results for query: "${query}"`);
+      console.log(`[VenezuelaReportaAdapter] Extracted ${normalizedResults.length} normalized results`);
 
       return normalizedResults;
     } catch (error) {
