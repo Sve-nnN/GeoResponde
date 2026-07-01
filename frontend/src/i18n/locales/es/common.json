@@ -12,6 +12,7 @@
     "loading": "Cargando catálogo...",
     "error": "Error al cargar el catálogo.",
     "situationLayers": "Capas de Situación",
+    "liveSources": "Fuentes en vivo",
     "externalResources": "Recursos Externos",
     "categories": {
       "Earthquakes": "Sismos",
@@ -57,8 +58,21 @@
         "landslides": "Deslizamientos"
       }
     },
+    "timeline": {
+      "heading": "Ventana temporal",
+      "advanced": "Datos avanzados",
+      "scrubberLabel": "Corte fino",
+      "presets": {
+        "today": "Hoy",
+        "week": "Últimos 7 días",
+        "month": "Último mes",
+        "all": "Histórico"
+      }
+    },
     "sitios": {
       "layerLabel": "Sitios de ayuda",
+      "badge": "Venezuela Reporta",
+      "tiposLabel": "Tipos",
       "legendHeading": "Tipos de sitio de ayuda",
       "estadoOperativo": "Estado operativo",
       "necesidades": "Necesidades",

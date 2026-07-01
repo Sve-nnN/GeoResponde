@@ -9,6 +9,8 @@ import { EonetLayer, EONET_LAYER_ID } from './EonetLayer';
 import { AidSitesLayer, AID_SITES_LAYER_ID } from './AidSitesLayer';
 import type { RenderFeature } from '../../lib/eonet';
 import type { AidSiteRenderFeature } from '../../lib/sitios';
+import type { EarthquakeFeatureCollection } from '../../lib/earthquakes';
+import { EMPTY_EARTHQUAKES } from '../../lib/earthquakes';
 import { useArcGISFeatureLayer } from '../../hooks/useArcGISFeatureLayer';
 import { useRef } from 'react';
 interface Props {
@@ -25,6 +27,10 @@ interface Props {
   aidSiteFeatures?: AidSiteRenderFeature[];
   showAidSites?: boolean;
   aidSiteActiveTipos?: Set<string>;
+  /** Live USGS earthquakes feeding the `layer-earthquakes` catalog layer. */
+  usgsData?: EarthquakeFeatureCollection;
+  /** Live FUNVISIS (via SismosVE) earthquakes feeding `layer-funvisis`. */
+  funvisisData?: EarthquakeFeatureCollection;
 }
 
 export function MapViewer({
@@ -40,6 +46,8 @@ export function MapViewer({
   aidSiteFeatures = [],
   showAidSites = false,
   aidSiteActiveTipos,
+  usgsData = EMPTY_EARTHQUAKES,
+  funvisisData = EMPTY_EARTHQUAKES,
 }: Props) {
   const { layers } = useCatalog();
   const mapRef = useRef<MapRef>(null);
@@ -328,7 +336,7 @@ export function MapViewer({
       const circleRadius = (layer.id === 'layer-hospitals' || layer.id === 'layer-citizen-reports') ? 5 : [
         'interpolate',
         ['exponential', 2],
-        ['get', 'mag'],
+        ['coalesce', ['get', 'mag'], 0],
         0, 0,
         2, 4,
         4, 10,
@@ -337,10 +345,17 @@ export function MapViewer({
       ];
 
       const isNasaLayer = layer.id === 'layer-nasa-sentinel-damage';
-      
-      const sourceProps = isNasaLayer 
+      // Dynamic earthquake layers read live gateway feeds instead of /data files.
+      const isUsgsLayer = layer.id === 'layer-earthquakes';
+      const isFunvisisLayer = layer.id === 'layer-funvisis';
+
+      const sourceProps = isNasaLayer
         ? { type: 'geojson' as const, data: nasaFeatures }
-        : { type: 'geojson' as const, data: sourceUrl };
+        : isUsgsLayer
+          ? { type: 'geojson' as const, data: usgsData }
+          : isFunvisisLayer
+            ? { type: 'geojson' as const, data: funvisisData }
+            : { type: 'geojson' as const, data: sourceUrl };
 
       const isPlateBoundary = [
         "any",

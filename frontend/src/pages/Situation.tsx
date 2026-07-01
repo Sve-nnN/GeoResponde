@@ -1,24 +1,36 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Activity, ShieldCheck } from 'lucide-react';
+import { bboxToEonetParam } from '@georesponde/shared';
 import { useCatalog } from '../hooks/useCatalog';
 import { useEonetEvents } from '../hooks/useEonetEvents';
 import { useAidSites } from '../hooks/useAidSites';
+import { useUsgsEarthquakes } from '../hooks/useUsgsEarthquakes';
+import { useFunvisisEarthquakes } from '../hooks/useFunvisisEarthquakes';
 import { EONET_CATEGORIES, appearanceRange } from '../lib/eonet';
 import { AID_SITE_TIPOS } from '../lib/sitios';
+import { presetToWindow, DEFAULT_TIME_PRESET, type TimePreset } from '../lib/timeWindow';
 import { MapViewer } from '../components/Map/MapViewer';
 import { Sidebar } from '../components/Sidebar/Sidebar';
-import { EonetTimeline } from '../components/Situation/EonetTimeline';
-import { EonetList } from '../components/Situation/EonetList';
+import { DynamicLayerToggle } from '../components/Sidebar/DynamicLayerToggle';
+import { TimeWindowControl } from '../components/Situation/TimeWindowControl';
 import { EonetControls } from '../components/Situation/EonetControls';
-import { EonetLegend } from '../components/Situation/EonetLegend';
-import { AidSitesLegend } from '../components/Situation/AidSitesLegend';
+import { AidSitesControls } from '../components/Situation/AidSitesControls';
+
+/** Dynamic earthquake layers fed by the gateway, not by static /data files. */
+const USGS_LAYER_ID = 'layer-earthquakes';
+const FUNVISIS_LAYER_ID = 'layer-funvisis';
 
 export function Situation() {
   const { t } = useTranslation();
   const { layers } = useCatalog();
-  const [activeLayerIds, setActiveLayerIds] = useState<Set<string>>(new Set());
+  // USGS live quakes are the priority earthquake layer — ON by default.
+  const [activeLayerIds, setActiveLayerIds] = useState<Set<string>>(
+    () => new Set([USGS_LAYER_ID]),
+  );
   const [unavailableLayerIds, setUnavailableLayerIds] = useState<Set<string>>(new Set());
-  const [showEonet, setShowEonet] = useState(true);
+  // EONET is complementary — opt-in.
+  const [showEonet, setShowEonet] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [visibleEpoch, setVisibleEpoch] = useState<number>(0);
   const [country, setCountry] = useState('VE');
@@ -26,10 +38,25 @@ export function Situation() {
     () => new Set(EONET_CATEGORIES),
   );
   const [showSitios, setShowSitios] = useState(false);
-  const [activeTipos] = useState<Set<string>>(() => new Set(AID_SITE_TIPOS));
+  const [activeTipos, setActiveTipos] = useState<Set<string>>(() => new Set(AID_SITE_TIPOS));
 
-  const { features: eonetFeatures } = useEonetEvents(country, [...activeCategories]);
+  // Shared time window: presets drive the actual fetch window (default: 7 days).
+  const [preset, setPreset] = useState<TimePreset>(DEFAULT_TIME_PRESET);
+  const [advanced, setAdvanced] = useState(false);
+  const window = presetToWindow(preset);
+
+  const bbox = bboxToEonetParam(country);
+  const usgsActive = activeLayerIds.has(USGS_LAYER_ID);
+  const funvisisActive = activeLayerIds.has(FUNVISIS_LAYER_ID);
+
+  const { features: eonetFeatures } = useEonetEvents(
+    country,
+    [...activeCategories],
+    window.eonetStart,
+  );
   const { features: aidSiteFeatures } = useAidSites(showSitios);
+  const { collection: usgsData } = useUsgsEarthquakes(usgsActive, bbox, window.quakeStart);
+  const { collection: funvisisData } = useFunvisisEarthquakes(funvisisActive, window.quakeStart);
   const range = appearanceRange(eonetFeatures);
 
   const toggleCategory = (id: string) => {
@@ -41,36 +68,42 @@ export function Situation() {
     });
   };
 
-  // When a new dataset loads (country/category refetch), reset the timeline
-  // cutoff to the latest first-appearance so all events show initially.
+  const toggleTipo = (id: string) => {
+    setActiveTipos((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // When a new dataset loads (country/category/window refetch), reset the
+  // scrubber cutoff to the latest first-appearance so all events show initially.
   useEffect(() => {
     if (range.max !== null) setVisibleEpoch(range.max);
   }, [range.max]);
 
   useEffect(() => {
-    // Determine which layers are missing their datasets
+    // Determine which STATIC layers are missing their datasets. The dynamic
+    // earthquake layers (USGS, FUNVISIS) are served by the gateway and are never
+    // "unavailable" here.
     const checkAvailability = async () => {
       const newUnavailable = new Set<string>();
-      
+
       for (const layer of layers) {
-        let sourceUrl = '/data/earthquakes.geojson';
-        if (layer.id === 'layer-funvisis') sourceUrl = '/data/funvisis-earthquakes.geojson';
-        else if (layer.id === 'layer-hospitals') sourceUrl = '/data/hospitals.geojson';
+        if (layer.id === USGS_LAYER_ID || layer.id === FUNVISIS_LAYER_ID) continue;
+
+        let sourceUrl = '';
+        if (layer.id === 'layer-hospitals') sourceUrl = '/data/hospitals.geojson';
         else if (layer.id === 'layer-faults') sourceUrl = '/data/faults.geojson';
         else if (layer.id === 'layer-geologic-units') sourceUrl = '/data/geologic_units.geojson';
         else if (layer.id === 'layer-copernicus-ground-movement') sourceUrl = '/data/copernicus/groundMovement.geojson';
         else if (layer.id === 'layer-citizen-reports') sourceUrl = '/data/citizen-reports.geojson';
-        else if (layer.id === 'layer-nasa-sentinel-damage') sourceUrl = ''; // dynamic
-        else if (layer.visualization?.type === 'raster') sourceUrl = layer.visualization.url;
-        else if (layer.id === 'layer-earthquakes') sourceUrl = '/data/earthquakes.geojson';
-        else sourceUrl = '';
-        
+
         if (sourceUrl && sourceUrl.startsWith('/data/')) {
           try {
             const res = await fetch(sourceUrl, { method: 'HEAD' });
-            if (!res.ok) {
-              newUnavailable.add(layer.id);
-            }
+            if (!res.ok) newUnavailable.add(layer.id);
           } catch (e) {
             newUnavailable.add(layer.id);
           }
@@ -79,19 +112,60 @@ export function Situation() {
       setUnavailableLayerIds(newUnavailable);
     };
 
-    if (layers.length > 0) {
-      checkAvailability();
-    }
+    if (layers.length > 0) checkAvailability();
   }, [layers]);
 
   const toggleLayer = (id: string) => {
-    setActiveLayerIds(prev => {
+    setActiveLayerIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
   };
+
+  const timeWindowSlot = (
+    <TimeWindowControl
+      preset={preset}
+      onPreset={setPreset}
+      advanced={advanced}
+      onToggleAdvanced={setAdvanced}
+      min={range.min}
+      max={range.max}
+      value={visibleEpoch}
+      onScrub={setVisibleEpoch}
+    />
+  );
+
+  const dynamicSourcesSlot = (
+    <>
+      <DynamicLayerToggle
+        icon={Activity}
+        label={t('situation.eonet.layerLabel')}
+        description={t('situation.eonet.panelTitle')}
+        badge={t('situation.eonet.panelSource')}
+        active={showEonet}
+        onToggle={() => setShowEonet((v) => !v)}
+      >
+        <EonetControls
+          country={country}
+          onCountry={setCountry}
+          activeCategories={activeCategories}
+          onToggleCategory={toggleCategory}
+        />
+      </DynamicLayerToggle>
+
+      <DynamicLayerToggle
+        icon={ShieldCheck}
+        label={t('situation.sitios.layerLabel')}
+        badge={t('situation.sitios.badge')}
+        active={showSitios}
+        onToggle={() => setShowSitios((v) => !v)}
+      >
+        <AidSitesControls activeTipos={activeTipos} onToggleTipo={toggleTipo} />
+      </DynamicLayerToggle>
+    </>
+  );
 
   return (
     <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
@@ -101,7 +175,7 @@ export function Situation() {
         unavailableLayerIds={unavailableLayerIds}
         eonetFeatures={eonetFeatures}
         showEonet={showEonet}
-        eonetVisibleEpoch={showEonet ? visibleEpoch : null}
+        eonetVisibleEpoch={showEonet && advanced ? visibleEpoch : null}
         eonetActiveCategories={showEonet ? activeCategories : undefined}
         eonetSelectedId={selectedId}
         onEonetSelect={setSelectedId}
@@ -109,114 +183,15 @@ export function Situation() {
         aidSiteFeatures={aidSiteFeatures}
         showAidSites={showSitios}
         aidSiteActiveTipos={showSitios ? activeTipos : undefined}
+        usgsData={usgsData}
+        funvisisData={funvisisData}
       />
-      <div
-        style={{
-          position: 'absolute',
-          top: '24px',
-          right: '24px',
-          bottom: '24px',
-          zIndex: 10,
-          width: '340px',
-          maxWidth: 'calc(100% - 48px)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          overflowY: 'auto',
-          paddingRight: '2px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'space-between',
-            gap: '8px',
-            padding: '0 2px',
-          }}
-        >
-          <span style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>
-            {t('situation.eonet.panelTitle')}
-          </span>
-          <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-            {t('situation.eonet.panelSource')}
-          </span>
-        </div>
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: '#1e293b',
-            border: '1px solid #334155',
-            color: '#e2e8f0',
-            padding: '10px 12px',
-            borderRadius: '10px',
-            fontSize: '13px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={showEonet}
-            onChange={(e) => setShowEonet(e.target.checked)}
-          />
-          {t('situation.eonet.layerLabel')}
-        </label>
-        {showEonet && (
-          <>
-            <EonetControls
-              country={country}
-              onCountry={setCountry}
-              activeCategories={activeCategories}
-              onToggleCategory={toggleCategory}
-            />
-            <EonetLegend activeCategories={activeCategories} />
-            <EonetTimeline
-              min={range.min}
-              max={range.max}
-              value={visibleEpoch}
-              onChange={setVisibleEpoch}
-            />
-            <EonetList
-              features={eonetFeatures}
-              visibleEpoch={visibleEpoch}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
-          </>
-        )}
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: '#1e293b',
-            border: '1px solid #334155',
-            color: '#e2e8f0',
-            padding: '10px 12px',
-            borderRadius: '10px',
-            fontSize: '13px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={showSitios}
-            onChange={(e) => setShowSitios(e.target.checked)}
-          />
-          {t('situation.sitios.layerLabel')}
-        </label>
-        {showSitios && <AidSitesLegend activeTipos={activeTipos} />}
-      </div>
       <Sidebar
-        activeLayerIds={activeLayerIds} 
-        onToggleLayer={toggleLayer} 
+        activeLayerIds={activeLayerIds}
+        onToggleLayer={toggleLayer}
         unavailableLayerIds={unavailableLayerIds}
+        timeWindowSlot={timeWindowSlot}
+        dynamicSourcesSlot={dynamicSourcesSlot}
       />
     </div>
   );

@@ -21,13 +21,20 @@ function normalizeSource(raw: string | null): EonetSource {
 }
 
 /**
- * Fetch EONET events from the Phase 12 gateway for a country (bbox) and a set of
- * categories, mirroring Find's fetch shape and useCatalog's loading/error state.
+ * Fetch EONET events from the Phase 12 gateway for a country (bbox), a set of
+ * categories, and a start date (the shared timeline window). Mirrors Find's
+ * fetch shape and useCatalog's loading/error state.
  *
- * Re-fetches whenever `iso2` or the joined category string changes. Network
+ * `start` (YYYY-MM-DD) constrains the fetch to RECENT events; passing
+ * `undefined` requests all history (the opt-in "Histórico" window). Re-fetches
+ * whenever `iso2`, the joined category string, or `start` changes. Network
  * failures set `error` and leave an empty collection — the hook never throws.
  */
-export function useEonetEvents(iso2: string, categories: string[]): UseEonetEventsResult {
+export function useEonetEvents(
+  iso2: string,
+  categories: string[],
+  start?: string,
+): UseEonetEventsResult {
   const [collection, setCollection] = useState<RenderFeatureCollection>(EMPTY);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +43,7 @@ export function useEonetEvents(iso2: string, categories: string[]): UseEonetEven
   // Depend on the joined string (not the array identity) so a new array literal
   // on every render does not re-trigger the effect.
   const categoryKey = categories.join(',');
+  const startKey = start ?? '';
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +57,7 @@ export function useEonetEvents(iso2: string, categories: string[]): UseEonetEven
       const bbox = bboxToEonetParam(iso2);
       if (bbox) params.set('bbox', bbox);
       if (categoryKey) params.set('category', categoryKey);
+      if (startKey) params.set('start', startKey);
 
       try {
         const res = await fetch(`${API_BASE}/api/eonet/events?${params.toString()}`, {
@@ -74,7 +83,7 @@ export function useEonetEvents(iso2: string, categories: string[]): UseEonetEven
       cancelled = true;
       controller.abort();
     };
-  }, [iso2, categoryKey]);
+  }, [iso2, categoryKey, startKey]);
 
   return { collection, features: collection.features, loading, error, source };
 }

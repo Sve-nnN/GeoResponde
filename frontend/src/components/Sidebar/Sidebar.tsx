@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useCatalog } from '../../hooks/useCatalog';
 import { LayerToggle } from './LayerToggle';
 import { useTranslation } from 'react-i18next';
@@ -7,9 +7,19 @@ interface Props {
   activeLayerIds: Set<string>;
   onToggleLayer: (id: string) => void;
   unavailableLayerIds?: Set<string>;
+  /** Shared time-window control, rendered above the layer list. */
+  timeWindowSlot?: ReactNode;
+  /** Dynamic (non-catalog) sources — EONET + aid sites — with their controls. */
+  dynamicSourcesSlot?: ReactNode;
 }
 
-export function Sidebar({ activeLayerIds, onToggleLayer, unavailableLayerIds = new Set() }: Props) {
+export function Sidebar({
+  activeLayerIds,
+  onToggleLayer,
+  unavailableLayerIds = new Set(),
+  timeWindowSlot,
+  dynamicSourcesSlot,
+}: Props) {
   const { layers, datasets, loading, error } = useCatalog();
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(['Infrastructure', 'Humanitarian', 'Logistics', 'Community']));
   const { t } = useTranslation();
@@ -47,7 +57,10 @@ export function Sidebar({ activeLayerIds, onToggleLayer, unavailableLayerIds = n
               <div style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '16px', fontSize: '18px' }}>
                 {t('sidebar.situationLayers')}
               </div>
-              
+
+              {/* Shared time window — drives EONET, USGS and FUNVISIS */}
+              {timeWindowSlot}
+
               {/* Scientific Layers always expanded without a category header */}
               <div style={{ paddingLeft: '8px', marginBottom: '20px' }}>
                 {layers.filter(l => scientificCategories.includes(l.category)).map(layer => (
@@ -103,8 +116,26 @@ export function Sidebar({ activeLayerIds, onToggleLayer, unavailableLayerIds = n
                   </div>
                 );
               })}
+
+              {/* Dynamic (non-catalog) live sources: EONET + aid sites */}
+              {dynamicSourcesSlot && (
+                <div style={{ marginTop: '20px' }}>
+                  <div
+                    style={{
+                      fontWeight: 'bold',
+                      color: '#e2e8f0',
+                      marginBottom: '12px',
+                      paddingBottom: '8px',
+                      borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    {t('sidebar.liveSources')}
+                  </div>
+                  {dynamicSourcesSlot}
+                </div>
+              )}
             </div>
-            
+
             <div style={{ marginTop: '20px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
               <div style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px' }}>
                 {t('sidebar.externalResources')}

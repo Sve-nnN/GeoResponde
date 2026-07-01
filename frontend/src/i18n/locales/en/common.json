@@ -12,6 +12,7 @@
     "loading": "Loading catalog...",
     "error": "Failed to load catalog.",
     "situationLayers": "Situation Layers",
+    "liveSources": "Live Sources",
     "externalResources": "External Resources",
     "categories": {
       "Earthquakes": "Earthquakes",
@@ -57,8 +58,21 @@
         "landslides": "Landslides"
       }
     },
+    "timeline": {
+      "heading": "Time window",
+      "advanced": "Advanced data",
+      "scrubberLabel": "Fine cutoff",
+      "presets": {
+        "today": "Today",
+        "week": "Last 7 days",
+        "month": "Last month",
+        "all": "Historical"
+      }
+    },
     "sitios": {
       "layerLabel": "Aid sites",
+      "badge": "Venezuela Reporta",
+      "tiposLabel": "Types",
       "legendHeading": "Aid site types",
       "estadoOperativo": "Operational status",
       "necesidades": "Needs",
