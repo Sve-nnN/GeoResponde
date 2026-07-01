@@ -1,4 +1,5 @@
 import { REPORT_TOPICS, type ReportFieldDef, type ReportFieldError, type ReportTopic } from '@georesponde/shared';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ReportFieldsProps {
@@ -45,6 +46,100 @@ const errorStyle: React.CSSProperties = {
   marginTop: '6px',
 };
 
+/** Parse a "lat, lng" string into a [lng, lat] tuple, or undefined when invalid. */
+function parseCoords(text: string): [number, number] | undefined {
+  const parts = text.split(',').map((p) => Number(p.trim()));
+  if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
+    return [parts[1], parts[0]];
+  }
+  return undefined;
+}
+
+/**
+ * Coordinates input. Keeps the in-progress *text* as local state (source of
+ * truth for what the user sees) and only lifts the parsed [lng, lat] tuple up
+ * when it parses — so a half-typed value like "10." is never erased mid-keystroke.
+ * Re-syncs from props only when the external tuple changes to something the
+ * current text does not represent (e.g. a programmatic reset).
+ */
+function CoordsInput({
+  id,
+  value,
+  placeholder,
+  onChange,
+}: {
+  id: string;
+  value: unknown;
+  placeholder: string;
+  onChange: (value: unknown) => void;
+}) {
+  const tuple = Array.isArray(value) ? (value as [number, number]) : undefined;
+  const canonical = tuple ? `${tuple[1]}, ${tuple[0]}` : '';
+  const [text, setText] = useState(canonical);
+
+  useEffect(() => {
+    const parsed = parseCoords(text);
+    const parsedKey = parsed ? `${parsed[0]},${parsed[1]}` : '';
+    const extKey = tuple ? `${tuple[0]},${tuple[1]}` : '';
+    if (parsedKey !== extKey) setText(canonical);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canonical]);
+
+  return (
+    <input
+      id={id}
+      type="text"
+      value={text}
+      placeholder={placeholder}
+      onChange={(e) => {
+        setText(e.target.value);
+        onChange(parseCoords(e.target.value));
+      }}
+      style={inputStyle}
+    />
+  );
+}
+
+/**
+ * Number input. Keeps the raw text locally so decimals / trailing separators
+ * ("1.", "1.5") are not clobbered per keystroke; lifts a parsed Number up (or
+ * undefined when empty/invalid) without overwriting the in-progress text.
+ */
+function NumberInput({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const canonical = typeof value === 'number' ? String(value) : '';
+  const [text, setText] = useState(canonical);
+
+  useEffect(() => {
+    const parsed = text.trim() === '' ? undefined : Number(text);
+    const parsedKey =
+      parsed !== undefined && Number.isFinite(parsed) ? String(parsed) : '';
+    if (parsedKey !== canonical) setText(canonical);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canonical]);
+
+  return (
+    <input
+      id={id}
+      type="number"
+      value={text}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        onChange(raw === '' ? undefined : Number(raw));
+      }}
+      style={inputStyle}
+    />
+  );
+}
+
 export function ReportFields({ topic, values, onChange, errors = {}, touched, onBlur }: ReportFieldsProps) {
   const { t } = useTranslation();
   const fields = REPORT_TOPICS[topic].fields;
@@ -65,12 +160,10 @@ export function ReportFields({ topic, values, onChange, errors = {}, touched, on
         );
       case 'number':
         return (
-          <input
+          <NumberInput
             id={field.name}
-            type="number"
-            value={typeof raw === 'number' ? raw : ''}
-            onChange={(e) => onChange(field.name, e.target.value === '' ? undefined : Number(e.target.value))}
-            style={inputStyle}
+            value={raw}
+            onChange={(value) => onChange(field.name, value)}
           />
         );
       case 'select':
@@ -89,29 +182,17 @@ export function ReportFields({ topic, values, onChange, errors = {}, touched, on
             ))}
           </select>
         );
-      case 'coords': {
+      case 'coords':
         // Presented as "lat, lng"; stored as a [lng, lat] tuple to match the
         // GeoJSON convention used elsewhere (NormalizedSearchResult.location).
-        const tuple = Array.isArray(raw) ? (raw as [number, number]) : undefined;
-        const display = tuple ? `${tuple[1]}, ${tuple[0]}` : '';
         return (
-          <input
+          <CoordsInput
             id={field.name}
-            type="text"
-            value={display}
+            value={raw}
             placeholder={t('report.coordsPlaceholder')}
-            onChange={(e) => {
-              const parts = e.target.value.split(',').map((p) => Number(p.trim()));
-              if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
-                onChange(field.name, [parts[1], parts[0]]);
-              } else {
-                onChange(field.name, undefined);
-              }
-            }}
-            style={inputStyle}
+            onChange={(value) => onChange(field.name, value)}
           />
         );
-      }
       default:
         return (
           <input
