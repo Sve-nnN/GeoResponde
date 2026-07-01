@@ -41,14 +41,17 @@ describe('DesaparecidosTerremotoAdapter.submit (REP-08 deep_link handoff)', () =
     expect(result.mode).toBe('dry-run');
     expect(result.action?.tier).toBe('deep_link');
     expect(result.action?.actionUrl?.startsWith(provider.website)).toBe(true);
-    expect(result.action?.body).toContain('Ana Prueba');
+    // Non-sensitive fields ride the deep link.
+    expect(result.action?.actionUrl).toContain('Ana');
   });
 
-  it('NEVER puts the cédula in the deep-link URL (but keeps it in the manual body)', async () => {
+  it('NEVER surfaces the cédula anywhere in the returned envelope', async () => {
     const adapter = new DesaparecidosTerremotoAdapter(provider);
     const result = await adapter.submit(report);
+    // Not in the deep-link URL, and not anywhere in the response envelope: the
+    // sensitive mailto/manual tiers are rendered client-side, not by the server.
     expect(result.action?.actionUrl).not.toContain(FAKE_CEDULA);
-    expect(result.action?.body).toContain(FAKE_CEDULA);
+    expect(JSON.stringify(result)).not.toContain(FAKE_CEDULA);
   });
 
   it('makes ZERO network calls (no headless submit, no scrape-to-write)', async () => {

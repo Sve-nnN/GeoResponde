@@ -9,7 +9,7 @@ import {
 } from '@georesponde/shared';
 import { fetchJson } from '../../transports/rest/client.js';
 import { filterAndNormalizePlataformas } from './parser.js';
-import { buildDeepLink, buildManualText } from '../../gateway/submissionModes.js';
+import { buildDeepLink } from '../../gateway/submissionModes.js';
 
 const PLATAFORMAS_ENDPOINT =
   'https://desaparecidos-terremoto-api.theempire.tech/api/plataformas';
@@ -45,10 +45,17 @@ export class DesaparecidosTerremotoAdapter implements BaseAdapter {
 
   /**
    * REP-08 ethical handoff. Performs NO network write and NO scraping — it
-   * builds the tiered action the USER acts on: a prefilled deep link to the
+   * returns the deep_link tier the USER acts on: a prefilled deep link to the
    * provider's own public form (non-sensitive fields only; the cédula never
-   * enters the URL) plus a copy-to-clipboard manual body (all fields) as the
-   * fallback tier. The constructed URL is never logged server-side.
+   * enters the URL). The constructed URL is never logged server-side.
+   *
+   * SECURITY: the mailto/manual fallback tiers (which legitimately carry the
+   * cédula, per research 03 §2) are rendered CLIENT-SIDE from the report the
+   * user already holds — via the same pure builders in `submissionModes.ts` —
+   * so no sensitive PII is ever placed into the server response envelope
+   * (upholding the PII-free-envelope invariant enforced in the report route).
+   * The intake mailto address, when the client renders it, is a documented
+   * placeholder: contacto@desaparecidosterremotovenezuela.com.
    */
   async submit(report: Report, opts: SubmitOptions = {}): Promise<SubmissionResult> {
     // The provider's own domain is the deep-link target. We prefill its public
@@ -64,10 +71,6 @@ export class DesaparecidosTerremotoAdapter implements BaseAdapter {
       action: {
         tier: 'deep_link',
         actionUrl: buildDeepLink(deepLinkBase, report),
-        // Manual/mailto fallback body (sensitive fields allowed here; the user
-        // copies on their own device). Intake mailto address, when needed, is a
-        // documented placeholder: contacto@desaparecidosterremotovenezuela.com.
-        body: buildManualText(report),
       },
     };
   }
