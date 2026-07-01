@@ -39,6 +39,8 @@
     "buttonLoading": "Searching...",
     "source": "Source",
     "type": "Type",
+    "viewList": "List",
+    "viewMap": "Map",
     "openResource": "Open Original Resource ↗",
     "noResults": "No results found for \"{{query}}\". Try a different search term.",
     "error": "Error searching providers"

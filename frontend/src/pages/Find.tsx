@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import type { NormalizedSearchResult, PersonStatus, Gender } from '@georesponde/shared';
 import { useTranslation } from 'react-i18next';
+import { FindMap } from '../components/Map/FindMap';
 
 const STATUS_META: Record<PersonStatus, { label: string; color: string }> = {
   missing: { label: 'Desaparecido', color: '#ef4444' },
@@ -57,6 +58,7 @@ export function Find() {
   const [results, setResults] = useState<NormalizedSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [view, setView] = useState<'list' | 'map'>('list');
   const { t } = useTranslation();
 
   const handleSearch = async (e: any) => {
@@ -161,6 +163,32 @@ export function Find() {
         ))}
       </div>
 
+      {results.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', justifyContent: 'flex-end' }}>
+          {(['list', 'map'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              style={{
+                padding: '8px 18px',
+                borderRadius: '10px',
+                border: '1px solid #334155',
+                background: view === v ? '#3498db' : 'transparent',
+                color: view === v ? '#fff' : '#94a3b8',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '14px',
+              }}
+            >
+              {v === 'list' ? `☰ ${t('find.viewList')}` : `◉ ${t('find.viewMap')}`}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {view === 'map' && results.length > 0 && <FindMap results={results} />}
+
+      {view === 'list' && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {results.map((r, i) => (
           <div key={i} style={{ 
@@ -228,6 +256,7 @@ export function Find() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

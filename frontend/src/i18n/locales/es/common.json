@@ -39,6 +39,8 @@
     "buttonLoading": "Buscando...",
     "source": "Fuente",
     "type": "Tipo",
+    "viewList": "Lista",
+    "viewMap": "Mapa",
     "openResource": "Abrir Recurso Original ↗",
     "noResults": "No se encontraron resultados para \"{{query}}\". Intenta con otro término de búsqueda.",
     "error": "Error buscando proveedores"
