@@ -47,15 +47,60 @@
   },
   "report": {
     "title": "Report Information",
-    "subtitle": "Report missing persons, damaged buildings and emergency updates through trusted organizations.",
-    "missingPerson": "Missing Person",
-    "foundPerson": "Found Person",
-    "damagedBuilding": "Damaged Building",
-    "shelterUpdate": "Shelter Update",
-    "back": "← Back to Categories",
-    "redirectTitle": "Continue on the official reporting platform",
-    "redirectText": "To ensure data integrity and avoid fragmentation, GeoResponde does not store reports directly. We will redirect you to the authoritative organization's platform where your report will be properly handled and verified.",
-    "goToOfficial": "Go to Official Platform ↗"
+    "subtitle": "Compose a structured report and GeoResponde forwards it to the right trusted organizations.",
+    "topics": {
+      "missing-person": "Missing Person",
+      "resource-need": "Resource Need",
+      "shelter-status": "Shelter or Hospital Status"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "age": "Age",
+      "gender": "Gender",
+      "lastSeenLocation": "Last seen location",
+      "lastSeenCoords": "Last seen coordinates",
+      "cedula": "ID number (cédula)",
+      "reporterContact": "Your contact",
+      "resourceType": "Resource type",
+      "location": "Location",
+      "description": "Description",
+      "urgency": "Urgency",
+      "facilityName": "Facility name",
+      "facilityType": "Facility type",
+      "locationCoords": "Coordinates",
+      "capacityStatus": "Capacity status",
+      "needs": "Needs"
+    },
+    "options": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "unknown": "Unknown",
+      "shelter": "Shelter",
+      "hospital": "Hospital",
+      "open": "Open",
+      "full": "Full",
+      "closed": "Closed",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "sensitiveHelper": "Sensitive information — share it only if you consent. It is never stored by GeoResponde.",
+    "coordsPlaceholder": "latitude, longitude",
+    "consent": {
+      "label": "I authorize forwarding this report",
+      "text": "GeoResponde does not store your report. It forwards it to the appropriate external providers and keeps only a receipt of the submission."
+    },
+    "submit": "Submit report",
+    "submitting": "Submitting...",
+    "result": {
+      "title": "Submission result",
+      "mode": "Mode",
+      "status": "Status",
+      "preview": "This is what would be forwarded:",
+      "networkError": "The report could not be submitted. Please try again."
+    }
   },
   "about": {
     "title": "GeoResponde",

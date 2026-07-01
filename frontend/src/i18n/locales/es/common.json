@@ -47,15 +47,60 @@
   },
   "report": {
     "title": "Reportar Información",
-    "subtitle": "Reporta personas desaparecidas, edificios dañados y actualizaciones de emergencia a través de organizaciones confiables.",
-    "missingPerson": "Persona Desaparecida",
-    "foundPerson": "Persona Encontrada",
-    "damagedBuilding": "Edificio Dañado",
-    "shelterUpdate": "Actualización de Refugio",
-    "back": "← Volver a Categorías",
-    "redirectTitle": "Continúa en la plataforma oficial de reportes",
-    "redirectText": "Para asegurar la integridad de los datos y evitar la fragmentación, GeoResponde no almacena reportes directamente. Te redirigiremos a la plataforma de la organización autorizada donde tu reporte será manejado y verificado adecuadamente.",
-    "goToOfficial": "Ir a la Plataforma Oficial ↗"
+    "subtitle": "Componga un reporte estructurado y GeoResponde lo reenvía a las organizaciones confiables correspondientes.",
+    "topics": {
+      "missing-person": "Persona desaparecida",
+      "resource-need": "Necesidad de recursos",
+      "shelter-status": "Estado de refugio u hospital"
+    },
+    "fields": {
+      "fullName": "Nombre completo",
+      "age": "Edad",
+      "gender": "Género",
+      "lastSeenLocation": "Última ubicación conocida",
+      "lastSeenCoords": "Coordenadas de la última ubicación",
+      "cedula": "Número de cédula",
+      "reporterContact": "Su contacto",
+      "resourceType": "Tipo de recurso",
+      "location": "Ubicación",
+      "description": "Descripción",
+      "urgency": "Urgencia",
+      "facilityName": "Nombre del establecimiento",
+      "facilityType": "Tipo de establecimiento",
+      "locationCoords": "Coordenadas",
+      "capacityStatus": "Estado de capacidad",
+      "needs": "Necesidades"
+    },
+    "options": {
+      "male": "Masculino",
+      "female": "Femenino",
+      "other": "Otro",
+      "unknown": "Desconocido",
+      "shelter": "Refugio",
+      "hospital": "Hospital",
+      "open": "Abierto",
+      "full": "Lleno",
+      "closed": "Cerrado",
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta",
+      "critical": "Crítica"
+    },
+    "sensitiveHelper": "Información sensible: compártala solo si usted lo consiente. GeoResponde nunca la almacena.",
+    "coordsPlaceholder": "latitud, longitud",
+    "consent": {
+      "label": "Autorizo el reenvío de este reporte",
+      "text": "GeoResponde no almacena su reporte. Lo reenvía a los proveedores externos correspondientes y conserva únicamente un comprobante del envío."
+    },
+    "submit": "Enviar reporte",
+    "submitting": "Enviando...",
+    "result": {
+      "title": "Resultado del envío",
+      "mode": "Modo",
+      "status": "Estado",
+      "preview": "Esto es lo que se reenviaría:",
+      "networkError": "No se pudo enviar el reporte. Intente nuevamente."
+    }
   },
   "about": {
     "title": "GeoResponde",
