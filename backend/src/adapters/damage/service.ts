@@ -95,9 +95,23 @@ export async function fetchCopernicusProduct(
   try {
     const raw = await deps.fetchJson<unknown>(activationUrl, { timeoutMs: 10000 });
     const layerUrls = resolveLayerUrls(raw, productType).filter(isAllowedLayerUrl);
-    const collections = await Promise.all(
-      layerUrls.map((u) => deps.fetchJson<unknown>(u, { timeoutMs: 10000 })),
+    // Fetch every layer independently and TOLERATE partial failure: a Copernicus
+    // ground-movement layer can be 15+ MB and time out, and one slow/failed layer
+    // must not nuke the whole product (which `Promise.all` would). Keep whatever
+    // came back; a longer per-layer budget gives the large GRM files room.
+    const settled = await Promise.allSettled(
+      layerUrls.map((u) => deps.fetchJson<unknown>(u, { timeoutMs: 30000 })),
     );
+    const collections = settled
+      .filter((s): s is PromiseFulfilledResult<unknown> => s.status === 'fulfilled')
+      .map((s) => s.value);
+    // Only a TOTAL wipeout (every layer failed) counts as empty; otherwise serve
+    // the partial result and cache it.
+    if (layerUrls.length > 0 && collections.length === 0) {
+      const stale = deps.cache.getStale(key);
+      if (stale) return { collection: stale, attribution, source: 'cache' };
+      return { collection: emptyCollection(), attribution, source: 'empty' };
+    }
     const collection = mergeCollections(collections);
     deps.cache.set(key, collection);
     return { collection, attribution, source: 'live' };
