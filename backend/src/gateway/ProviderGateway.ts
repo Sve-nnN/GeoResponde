@@ -1,7 +1,14 @@
 import fs from 'fs';
 import path from 'path';
-import { HumanitarianProvider, NormalizedSearchResult, SubmissionPackage } from '@georesponde/shared';
-import { BaseAdapter } from '../adapters/BaseAdapter.js';
+import {
+  HumanitarianProvider,
+  NormalizedSearchResult,
+  Report,
+  SubmissionReport,
+  SubmissionResult,
+  summarize,
+} from '@georesponde/shared';
+import { BaseAdapter, isSubmissionCapable } from '../adapters/BaseAdapter.js';
 import { createAdapter } from '../adapters/registry.js';
 import { isCedula, normalizeCedula } from '../adapters/person.js';
 import { dedupePersons } from './dedupe.js';
@@ -67,6 +74,54 @@ export class ProviderGateway {
     // Many of these providers aggregate one another, so the same person is
     // reported by several. Collapse those into one result with provenance.
     return dedupePersons(results);
+  }
+
+  /**
+   * Submission router (REP-03). Fans one canonical Report out to every
+   * submission-capable adapter whose declared topics include the report topic,
+   * mirroring search(): filter, Promise.all, per-adapter `.catch()` isolation so
+   * a single provider failure can never sink the batch, then roll up into a
+   * partial-success SubmissionReport. A federator, never a store — nothing here
+   * is persisted. Dry-run default + idempotency keys land in plan 10-02.
+   */
+  async submit(
+    report: Report,
+    opts: { dryRun?: boolean; only?: string[] } = {},
+  ): Promise<SubmissionReport> {
+    const startedAt = Date.now();
+
+    const targets: BaseAdapter[] = [];
+    for (const [id, adapter] of this.adapters.entries()) {
+      if (
+        isSubmissionCapable(adapter) &&
+        adapter.submissionTopics!.includes(report.topic) &&
+        (!opts.only || opts.only.includes(id))
+      ) {
+        targets.push(adapter);
+      }
+    }
+
+    const failedResult = (adapter: BaseAdapter): SubmissionResult => ({
+      provider: adapter.provider.id,
+      mode: 'dry-run',
+      status: 'error',
+      error: 'submission failed',
+    });
+
+    const results = await Promise.all(
+      targets.map((adapter) => adapter.submit(report).catch(() => failedResult(adapter))),
+    );
+
+    const summary = summarize(results);
+    const elapsedMs = Date.now() - startedAt;
+
+    return {
+      idempotencyKey: report.id,
+      topic: report.topic,
+      results,
+      summary,
+      elapsedMs,
+    };
   }
 
   getProviders() {
