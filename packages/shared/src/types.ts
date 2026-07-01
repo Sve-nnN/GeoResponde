@@ -193,9 +193,16 @@ export interface Report {
 }
 
 /**
- * Per-target outcome of a (future) submission. Deliberately provider-agnostic
- * so Phase 10's router and Phase 11's PFIF/Ushahidi adapters slot in without
- * reshaping. This phase only ever produces `mode: 'dry-run'`.
+ * How a provider accepts a submission. Declared now for Phase 11 (the deep-link/
+ * mailto/manual tiers); Phase 10's router only exercises the `api`/dry-run path.
+ */
+export type SubmissionMode = 'api' | 'deep_link' | 'mailto' | 'manual';
+
+/**
+ * Per-target outcome of a submission. Deliberately provider-agnostic so the
+ * router (Phase 10) and Phase 11's PFIF/Ushahidi adapters slot in without
+ * reshaping. Extended additively in Phase 10: every new member is optional, so a
+ * Phase-9-shaped result object still satisfies the type.
  */
 export interface SubmissionResult {
   provider: string;
@@ -204,9 +211,45 @@ export interface SubmissionResult {
   receipt?: {
     remoteId?: string;
     url?: string;
+    /** ISO timestamp of the receipt, completing the REP-05 receipt shape. */
+    timestamp?: string;
   };
   preview?: unknown;
   error?: string;
+  /** Per-provider derived idempotency key, echoed back so the client can dedupe. */
+  idempotencyKey?: string;
+  /** ISO timestamp stamped by the gateway when a live send is attempted. */
+  submittedAt?: string;
+  /** Whether this outcome is safe to retry (surfaced by retry-aware adapters). */
+  retryable?: boolean;
+}
+
+/**
+ * The roll-up the submission router returns — NEVER stored. Summarizes one
+ * `Report` fanned out across N submission-capable providers over the Phase-9
+ * `status` vocabulary (`ok`/`skipped`/`error`).
+ */
+export interface SubmissionReport {
+  /** Report-level idempotency key minted for this fan-out. */
+  idempotencyKey: string;
+  topic: ReportTopic;
+  results: SubmissionResult[];
+  summary: { ok: number; skipped: number; error: number };
+  elapsedMs: number;
+}
+
+/**
+ * Tally a set of per-provider results by `status`. An empty array yields all
+ * zeros. Single source of truth for the `SubmissionReport.summary` roll-up.
+ */
+export function summarize(results: SubmissionResult[]): {
+  ok: number;
+  skipped: number;
+  error: number;
+} {
+  const summary = { ok: 0, skipped: 0, error: 0 };
+  for (const r of results) summary[r.status] += 1;
+  return summary;
 }
 
 /**
