@@ -731,6 +731,42 @@
       "capabilities": [
         "search"
       ]
+    },
+    {
+      "id": "prov-sosvenezuela",
+      "display_name": "SOS Venezuela 2026",
+      "website": "https://sosvenezuela2026.com/",
+      "description": "Aggregated missing/found persons registry for the 2026 Venezuela earthquake, via its public REST API.",
+      "logo": "/logos/sosvenezuela.png",
+      "status": "active",
+      "adapter": "SosVenezuelaAdapter",
+      "capabilities": [
+        "search"
+      ]
+    },
+    {
+      "id": "prov-nexosignal",
+      "display_name": "Busca NexoSignal",
+      "website": "https://busca.nexosignal.co/",
+      "description": "Directory of found children after the 2026 Venezuela earthquake, via the public Supabase API.",
+      "logo": "/logos/nexosignal.png",
+      "status": "active",
+      "adapter": "NexoSignalAdapter",
+      "capabilities": [
+        "search"
+      ]
+    },
+    {
+      "id": "prov-migenteve",
+      "display_name": "Patitas a Salvo VE",
+      "website": "https://migenteve.com/",
+      "description": "Lost and found pets after the 2026 Venezuela earthquake, via its public REST API.",
+      "logo": "/logos/migenteve.png",
+      "status": "active",
+      "adapter": "MiGenteVeAdapter",
+      "capabilities": [
+        "search"
+      ]
     }
   ]
 }
