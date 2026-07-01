@@ -13,6 +13,9 @@ import { ReencuentraVeAdapter } from './reencuentra-ve/adapter.js';
 import { SosVenezuelaAdapter } from './sosvenezuela/adapter.js';
 import { NexoSignalAdapter } from './nexosignal/adapter.js';
 import { MiGenteVeAdapter } from './migenteve/adapter.js';
+import { TerremotoVenezuelaAdapter } from './terremotovenezuela/adapter.js';
+import { SismoVenezuelaAdapter } from './sismovenezuela/adapter.js';
+import { AyudaVenezuelaAdapter } from './ayudavenezuela/adapter.js';
 
 /**
  * Any class that can build a BaseAdapter from a provider configuration.
@@ -65,3 +68,6 @@ registerAdapter('ReencuentraVeAdapter', ReencuentraVeAdapter);
 registerAdapter('SosVenezuelaAdapter', SosVenezuelaAdapter);
 registerAdapter('NexoSignalAdapter', NexoSignalAdapter);
 registerAdapter('MiGenteVeAdapter', MiGenteVeAdapter);
+registerAdapter('TerremotoVenezuelaAdapter', TerremotoVenezuelaAdapter);
+registerAdapter('SismoVenezuelaAdapter', SismoVenezuelaAdapter);
+registerAdapter('AyudaVenezuelaAdapter', AyudaVenezuelaAdapter);

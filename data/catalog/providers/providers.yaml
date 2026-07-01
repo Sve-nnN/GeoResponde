@@ -141,3 +141,33 @@
   adapter: MiGenteVeAdapter
   capabilities:
     - search
+
+- id: prov-terremotovenezuela
+  display_name: Terremoto Venezuela
+  website: https://terremotovenezuela.com/
+  description: Curated registry of earthquake-damaged buildings, via its public Supabase API. Damage reports only; trapped/casualty names are not surfaced.
+  logo: /logos/terremotovenezuela.png
+  status: active
+  adapter: TerremotoVenezuelaAdapter
+  capabilities:
+    - search
+
+- id: prov-sismovenezuela
+  display_name: Sismo Venezuela
+  website: https://sismovenezuela.com/
+  description: Crowdsourced social-media reports (YouTube/X/Instagram) about the 2026 earthquake, via its public REST API. Unverified.
+  logo: /logos/sismovenezuela.png
+  status: active
+  adapter: SismoVenezuelaAdapter
+  capabilities:
+    - search
+
+- id: prov-ayudavenezuela
+  display_name: Ayuda Venezuela
+  website: https://ayudavenezuela.app/
+  description: Missing-persons registry and relief directory for the 2026 Venezuela earthquake, via its public Supabase API.
+  logo: /logos/ayudavenezuela.png
+  status: active
+  adapter: AyudaVenezuelaAdapter
+  capabilities:
+    - search
