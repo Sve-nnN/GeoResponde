@@ -1,6 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify'
 import cors from '@fastify/cors'
 import { pathToFileURL } from 'url'
+import { REPORT_TOPICS, type Report, type SubmissionResult } from '@georesponde/shared'
 import { ProviderGateway } from './gateway/ProviderGateway.js'
 import { VenezuelaTeBuscaAdapter } from './adapters/venezuelatebusca/adapter.js'
 
@@ -30,6 +31,28 @@ export function buildApp(): FastifyInstance {
     const query = (request.query as { q?: string }).q
     if (!query) return []
     return gateway.search(query)
+  })
+
+  // Dry-run report composition seam (Phase 9). Accepts a structured Report and
+  // returns a provider-agnostic SubmissionResult preview. No provider fan-out
+  // (that is Phase 10) and — per the owner directive — nothing is persisted:
+  // GeoResponde is a federator, not a system of record. Sensitive fields
+  // (cédula, reporter.contact) are never logged here.
+  fastify.post('/api/report', async (request, reply): Promise<SubmissionResult> => {
+    const report = request.body as Partial<Report> | undefined
+    const topic = report?.topic
+
+    if (!topic || !(topic in REPORT_TOPICS)) {
+      reply.code(400)
+      return { provider: 'dry-run', mode: 'dry-run', status: 'error', error: 'unknown topic' }
+    }
+
+    return {
+      provider: 'dry-run',
+      mode: 'dry-run',
+      status: 'ok',
+      preview: { topic, fields: report?.fields ?? {} },
+    }
   })
 
   // Generic provider inspector: works for any registered provider by catalog id
