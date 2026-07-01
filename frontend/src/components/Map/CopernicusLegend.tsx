@@ -12,6 +12,10 @@ interface CopernicusLegendProps {
   aidSiteActiveTipos?: Set<string>;
   /** EU/Copernicus attribution from the gateway `X-Attribution` header (D-07). */
   attribution?: string | null;
+  /** ARIA/NASA/ESA/Overture attribution for the DPM layer (ND-06). */
+  nasaAttribution?: string | null;
+  /** "Experimental — not validated" disclaimer for the DPM layer (ND-06). */
+  nasaDisclaimer?: string | null;
 }
 
 export function CopernicusLegend({
@@ -21,6 +25,8 @@ export function CopernicusLegend({
   showAidSites = false,
   aidSiteActiveTipos,
   attribution = null,
+  nasaAttribution = null,
+  nasaDisclaimer = null,
 }: CopernicusLegendProps) {
   const { t } = useTranslation();
   const hasDamage = activeLayerIds.has('layer-copernicus-damage');
@@ -230,6 +236,17 @@ export function CopernicusLegend({
       {(hasDamage || hasGroundMovement) && attribution && (
         <div style={{ fontSize: '10px', color: '#888', marginTop: '4px', borderTop: '1px solid #eee', paddingTop: '4px' }}>
           {attribution}
+        </div>
+      )}
+
+      {hasNasa && (nasaAttribution || nasaDisclaimer) && (
+        <div style={{ fontSize: '10px', color: '#888', marginTop: '4px', borderTop: '1px solid #eee', paddingTop: '4px' }}>
+          {nasaDisclaimer && (
+            <div style={{ fontStyle: 'italic', fontWeight: 600, color: '#b45309', marginBottom: nasaAttribution ? '3px' : 0 }}>
+              {nasaDisclaimer}
+            </div>
+          )}
+          {nasaAttribution && <div>{nasaAttribution}</div>}
         </div>
       )}
     </div>

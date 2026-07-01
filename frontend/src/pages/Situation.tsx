@@ -8,6 +8,7 @@ import { useAidSites } from '../hooks/useAidSites';
 import { useUsgsEarthquakes } from '../hooks/useUsgsEarthquakes';
 import { useFunvisisEarthquakes } from '../hooks/useFunvisisEarthquakes';
 import { useDamageLayer } from '../hooks/useDamageLayer';
+import { useNasaDpmLayer } from '../hooks/useNasaDpmLayer';
 import { EONET_CATEGORIES, appearanceRange } from '../lib/eonet';
 import { AID_SITE_TIPOS } from '../lib/sitios';
 import { presetToWindow, DEFAULT_TIME_PRESET, type TimePreset } from '../lib/timeWindow';
@@ -52,6 +53,8 @@ export function Situation() {
   // Copernicus EMS damage layers are served live by the gateway route.
   const damageActive = activeLayerIds.has('layer-copernicus-damage');
   const groundMovementActive = activeLayerIds.has('layer-copernicus-ground-movement');
+  // NASA ARIA DPM (damaged structures) served live by the gateway route (NASA-02).
+  const nasaDpmActive = activeLayerIds.has('layer-nasa-sentinel-damage');
 
   const { features: eonetFeatures } = useEonetEvents(
     country,
@@ -66,6 +69,12 @@ export function Situation() {
     damageActive,
   );
   const { collection: groundMovementData } = useDamageLayer('ground-movement', groundMovementActive);
+  const {
+    collection: nasaDpmData,
+    attribution: nasaAttribution,
+    disclaimer: nasaDisclaimer,
+    loading: nasaDpmLoading,
+  } = useNasaDpmLayer(nasaDpmActive);
   const range = appearanceRange(eonetFeatures);
 
   const toggleCategory = (id: string) => {
@@ -203,6 +212,10 @@ export function Situation() {
         copernicusDamageData={copernicusDamageData}
         copernicusGroundMovementData={groundMovementData}
         copernicusAttribution={copernicusAttribution}
+        nasaDpmData={nasaDpmData}
+        nasaAttribution={nasaAttribution}
+        nasaDisclaimer={nasaDisclaimer}
+        nasaDpmLoading={nasaDpmLoading}
       />
       <Sidebar
         activeLayerIds={activeLayerIds}

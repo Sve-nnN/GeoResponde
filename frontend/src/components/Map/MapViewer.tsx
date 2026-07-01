@@ -12,7 +12,7 @@ import type { AidSiteRenderFeature } from '../../lib/sitios';
 import type { EarthquakeFeatureCollection } from '../../lib/earthquakes';
 import { EMPTY_EARTHQUAKES } from '../../lib/earthquakes';
 import type { DamageFeatureCollection } from '../../hooks/useDamageLayer';
-import { useArcGISFeatureLayer } from '../../hooks/useArcGISFeatureLayer';
+import type { NasaDpmFeatureCollection } from '../../hooks/useNasaDpmLayer';
 import { useRef } from 'react';
 import { API_BASE } from '../../lib/api';
 
@@ -49,9 +49,18 @@ interface Props {
   copernicusGroundMovementData?: DamageFeatureCollection;
   /** EU/Copernicus attribution string surfaced in the legend (D-07). */
   copernicusAttribution?: string | null;
+  /** Live NASA ARIA DPM (damaged structures) feeding `layer-nasa-sentinel-damage`. */
+  nasaDpmData?: NasaDpmFeatureCollection;
+  /** ARIA/NASA/ESA/Overture attribution surfaced in the legend (ND-06). */
+  nasaAttribution?: string | null;
+  /** "Experimental — not validated" disclaimer surfaced in the legend (ND-06). */
+  nasaDisclaimer?: string | null;
+  /** Whether the DPM gateway fetch is in flight (drives the loading toast). */
+  nasaDpmLoading?: boolean;
 }
 
 const EMPTY_DAMAGE: DamageFeatureCollection = { type: 'FeatureCollection', features: [] };
+const EMPTY_NASA_DPM: NasaDpmFeatureCollection = { type: 'FeatureCollection', features: [] };
 
 export function MapViewer({
   activeLayerIds,
@@ -71,11 +80,13 @@ export function MapViewer({
   copernicusDamageData = EMPTY_DAMAGE,
   copernicusGroundMovementData = EMPTY_DAMAGE,
   copernicusAttribution = null,
+  nasaDpmData = EMPTY_NASA_DPM,
+  nasaAttribution = null,
+  nasaDisclaimer = null,
+  nasaDpmLoading = false,
 }: Props) {
   const { layers } = useCatalog();
   const mapRef = useRef<MapRef>(null);
-  
-  const [mapBounds, setMapBounds] = useState<[number, number, number, number] | null>(null);
 
   const [hoverInfo, setHoverInfo] = useState<{
     longitude: number;
@@ -96,13 +107,6 @@ export function MapViewer({
       (l.id === 'layer-earthquakes' || l.id === 'layer-funvisis' || l.id === 'layer-hospitals' || l.id === 'layer-faults' || l.id === 'layer-geologic-units' || l.id === 'layer-sat-before' || l.id === 'layer-sat-after' || l.id === 'layer-copernicus-damage' || l.id === 'layer-copernicus-ground-movement' || l.id === 'layer-nasa-sentinel-damage' || l.id === 'layer-nasa-interferogram' || l.id === 'layer-citizen-reports' || l.id === 'layer-verified-buildings')
     );
   }, [layers, activeLayerIds]);
-
-  const { featureCollection: nasaFeatures, loading: nasaLoading } = useArcGISFeatureLayer({
-    url: 'https://services7.arcgis.com/WSiUmUhlFx4CtMBB/arcgis/rest/services/202610_s1_likelydmgareas/FeatureServer/0',
-    bbox: mapBounds,
-    where: 'damage>0',
-    active: activeLayerIds.has('layer-nasa-sentinel-damage')
-  });
 
   const onFeatureClick = useCallback((event: any) => {
     const { features, lngLat } = event;
@@ -165,19 +169,6 @@ export function MapViewer({
       };
       img.src = icons[icon as keyof typeof icons];
     });
-
-    if (map) {
-      const bounds = map.getBounds();
-      setMapBounds([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]);
-    }
-  }, []);
-
-  const onMapMoveEnd = useCallback((e: any) => {
-    const map = e.target;
-    if (map) {
-      const bounds = map.getBounds();
-      setMapBounds([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]);
-    }
   }, []);
 
   const renderLayers = (layersToRender: any[]) => {
@@ -374,7 +365,7 @@ export function MapViewer({
       const isGroundMovementLayer = layer.id === 'layer-copernicus-ground-movement';
 
       const sourceProps = isNasaLayer
-        ? { type: 'geojson' as const, data: nasaFeatures }
+        ? { type: 'geojson' as const, data: nasaDpmData }
         : isUsgsLayer
           ? { type: 'geojson' as const, data: usgsData }
           : isFunvisisLayer
@@ -652,7 +643,6 @@ export function MapViewer({
         mapLib={maplibregl as any}
         {...viewState}
         onMove={e => setViewState(e.viewState)}
-        onMoveEnd={onMapMoveEnd}
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
         interactiveLayerIds={[
           ...getInteractiveIds(activeLayersWithData),
@@ -690,7 +680,7 @@ export function MapViewer({
         )}
         {renderPopup()}
       </Map>
-      {nasaLoading && activeLayerIds.has('layer-nasa-sentinel-damage') && (
+      {nasaDpmLoading && activeLayerIds.has('layer-nasa-sentinel-damage') && (
         <div style={{
           position: 'absolute', top: 20, right: 20, background: 'rgba(0,0,0,0.7)',
           color: 'white', padding: '8px 16px', borderRadius: '4px', fontSize: '12px'
@@ -705,6 +695,8 @@ export function MapViewer({
         showAidSites={showAidSites}
         aidSiteActiveTipos={aidSiteActiveTipos}
         attribution={copernicusAttribution}
+        nasaAttribution={nasaAttribution}
+        nasaDisclaimer={nasaDisclaimer}
       />
     </div>
   );
