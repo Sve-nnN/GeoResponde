@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import {
   HumanitarianProvider,
   NormalizedSearchResult,
@@ -13,6 +14,11 @@ import { createAdapter } from '../adapters/registry.js';
 import { isCedula, normalizeCedula } from '../adapters/person.js';
 import { dedupePersons } from './dedupe.js';
 import { newReportKey, deriveKey, hashKey } from './idempotency.js';
+
+// ESM has no __dirname. Derive it from this module's URL so the catalog path
+// resolves relative to the compiled file — production-safe on Railway and after
+// the TypeScript build — instead of a fragile process.cwd() lookup.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** Minimal structured logger the gateway emits audit-lite lines through. */
 interface AuditLogger {
@@ -34,10 +40,11 @@ export class ProviderGateway {
   }
 
   async initialize() {
-    // Load from catalog
-    // In production, this would read from the static output public/catalog/providers.json
-    // For this dev environment, we can read it from the public/catalog directory
-    const catalogPath = path.resolve(process.cwd(), '../public/catalog/providers.json');
+    // Resolve the catalog relative to this module's location (reaching the
+    // monorepo root), matching main's production-safe approach. Works both in
+    // local dev and after the TypeScript build; NOT process.cwd()-based (which
+    // was fragile on Railway).
+    const catalogPath = path.resolve(__dirname, '../../../public/catalog/providers.json');
     if (fs.existsSync(catalogPath)) {
       const content = fs.readFileSync(catalogPath, 'utf8');
       this.providers = JSON.parse(content);
