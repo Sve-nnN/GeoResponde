@@ -25,14 +25,22 @@ an adapter, a captured fixture, and unit tests.
 
 | Provider | Data | Source type | Transport | Branch |
 |----------|------|-------------|-----------|--------|
-| Encuéntralos (tecnosoft.dev) | Missing/found persons, shelters | Public REST `/api/personas` | REST | `provider/encuentralos` |
+| Encuéntralos (tecnosoft.dev) | Missing/found persons | Public REST `/api/personas` | REST | `provider/encuentralos` |
 | Úbícame (911.ubica.me) | Victims (missing/alive/hospitalized) | Static JSON shards A–Z | REST | `provider/ubicame` |
-| Busca en Listas VZLA | OCR hospital/shelter lists | FastAPI `/search` | REST | `provider/buscaenlistas` |
-| Desaparecidos Terremoto VE | Missing persons | _under investigation_ | — | `provider/desaparecidos-terremoto` |
-| Hazlo Hoy Terremoto | _under investigation_ | — | — | `provider/hazlohoy` |
-| Apoyo (salu.pro) | Aid/resources | _under investigation_ | — | `provider/apoyo-salu` |
-| Venezuela Reporta | Citizen reports | _under investigation_ | — | `provider/venezuelareporta` |
-| Reencuentra VE | Family reunification | _under investigation_ | — | `provider/reencuentra-ve` |
+| Busca en Listas VZLA | OCR hospital/shelter lists | FastAPI `/search` (lat/lng) | REST | `provider/buscaenlistas` |
+| Apoyo (salu.pro) | Missing persons | Next.js `/api/missing-persons` (cursor) | REST | `provider/apoyo-salu` |
+| Venezuela Reporta | Consolidated persons | Official open API `/api/v1/personas` | REST | `provider/venezuelareporta` |
+| Desaparecidos Terremoto VE | Aid-platform directory | Open `/api/plataformas` (persons behind reCAPTCHA) | REST | `provider/desaparecidos-terremoto` |
+| Hazlo Hoy Terremoto | Map markers (persons/buildings/aid) | SSR RSC payload (`markers[]`) | Custom (RSC extract) | `provider/hazlohoy` |
+| Reencuentra VE | Family reunification | HTML (Supabase closed) | Scrape (Cheerio) | `provider/reencuentra-ve` |
+
+Also on this milestone: `provider/hdx` federates OCHA's global Humanitarian Data
+Exchange (keyless CKAN API) as a reusable, non-Venezuela-specific provider.
+
+**Validated end-to-end:** with all providers registered, the Provider Gateway
+loads 10 adapters and a single federated `search("maria")` returns ~229 live
+results across 9 providers in ~5s, in parallel and fault-tolerant (a failing
+provider yields `[]` without breaking the others).
 
 > Several of these sites aggregate one another (e.g. Encuéntralos and Úbícame
 > sync from Venezuela Reporta, Venezuela Te Busca and others). Where an upstream
