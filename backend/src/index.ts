@@ -7,6 +7,7 @@ import { VenezuelaTeBuscaAdapter } from './adapters/venezuelatebusca/adapter.js'
 import { fetchEonetEvents } from './adapters/eonet/service.js'
 import { fetchAidSites } from './adapters/sitios/service.js'
 import { fetchUsgsEarthquakes } from './adapters/usgs/service.js'
+import { fetchFunvisisEarthquakes } from './adapters/funvisis/service.js'
 
 /**
  * Build and configure the Provider Gateway HTTP app. Exported so it can run
@@ -94,6 +95,20 @@ export function buildApp(): FastifyInstance {
     const result = await fetchUsgsEarthquakes({ bbox, start })
     reply.header('X-USGS-Source', result.source)
     reply.header('X-Attribution', 'USGS')
+    return result.collection
+  })
+
+  // Situation map local earthquake layer. Federates the OSS SismosVE feed
+  // (official FUNVISIS data, ~5 min refresh) as cached, normalized GeoJSON.
+  // FUNVISIS has no official public API (their DB is currently down), so
+  // SismosVE is the source of record here. Attribution "FUNVISIS (vía SismosVE)"
+  // is REQUIRED and carried on every feature + this header. `start` applies the
+  // timeline window. Degrades gracefully (X-FUNVISIS-Source), never 5xx.
+  fastify.get('/api/funvisis/earthquakes', async (request, reply) => {
+    const { start } = request.query as { start?: string }
+    const result = await fetchFunvisisEarthquakes({ start })
+    reply.header('X-FUNVISIS-Source', result.source)
+    reply.header('X-Attribution', 'FUNVISIS (vía SismosVE)')
     return result.collection
   })
 
