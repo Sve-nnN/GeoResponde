@@ -35,6 +35,7 @@
       "layerLabel": "Eventos NASA EONET",
       "source": "Fuente",
       "firstSeen": "Primera aparición",
+      "timelineLabel": "Línea de tiempo",
       "categories": {
         "floods": "Inundaciones",
         "wildfires": "Incendios forestales",

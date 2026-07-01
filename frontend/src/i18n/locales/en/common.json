@@ -35,6 +35,7 @@
       "layerLabel": "NASA EONET Events",
       "source": "Source",
       "firstSeen": "First seen",
+      "timelineLabel": "Timeline",
       "categories": {
         "floods": "Floods",
         "wildfires": "Wildfires",

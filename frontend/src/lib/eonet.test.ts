@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import type { SituationFeature, SituationFeatureCollection } from '@georesponde/shared';
-import { EONET_CATEGORIES, CATEGORY_COLORS, toRenderCollection } from './eonet';
+import {
+  EONET_CATEGORIES,
+  CATEGORY_COLORS,
+  toRenderCollection,
+  appearanceRange,
+} from './eonet';
 
 function feature(
   id: string,
@@ -96,5 +101,33 @@ describe('toRenderCollection', () => {
     expect(out.features.map((f) => f.properties.id)).toEqual(['good1', 'good2']);
     // sequence is re-based over the kept features
     expect(out.features.map((f) => f.properties.sequence)).toEqual([0, 1]);
+  });
+});
+
+describe('appearanceRange', () => {
+  it('returns { min: null, max: null } for an empty list (no throw)', () => {
+    expect(appearanceRange([])).toEqual({ min: null, max: null });
+  });
+
+  it('returns min === max for a single feature', () => {
+    const out = toRenderCollection(
+      collection([feature('solo', 'floods', '2026-05-01T00:00:00Z')]),
+    );
+    const e = Date.parse('2026-05-01T00:00:00Z');
+    expect(appearanceRange(out.features)).toEqual({ min: e, max: e });
+  });
+
+  it('returns the smallest and largest firstDateEpoch across features', () => {
+    const out = toRenderCollection(
+      collection([
+        feature('a', 'floods', '2026-01-01T00:00:00Z'),
+        feature('b', 'wildfires', '2026-06-01T00:00:00Z'),
+        feature('c', 'volcanoes', '2026-03-01T00:00:00Z'),
+      ]),
+    );
+    expect(appearanceRange(out.features)).toEqual({
+      min: Date.parse('2026-01-01T00:00:00Z'),
+      max: Date.parse('2026-06-01T00:00:00Z'),
+    });
   });
 });

@@ -93,3 +93,23 @@ export function toRenderCollection(
 
   return { type: 'FeatureCollection', features };
 }
+
+/**
+ * Smallest and largest `firstDateEpoch` across the render features, used to
+ * bound the timeline scrubber. Returns `{ min: null, max: null }` for an empty
+ * list so the slider can disable itself.
+ */
+export function appearanceRange(features: RenderFeature[]): {
+  min: number | null;
+  max: number | null;
+} {
+  if (!features.length) return { min: null, max: null };
+  let min = Infinity;
+  let max = -Infinity;
+  for (const f of features) {
+    const e = f.properties.firstDateEpoch;
+    if (e < min) min = e;
+    if (e > max) max = e;
+  }
+  return { min, max };
+}
