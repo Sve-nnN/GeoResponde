@@ -177,12 +177,13 @@
     "id": "prov-terremotovenezuela",
     "display_name": "Terremoto Venezuela",
     "website": "https://terremotovenezuela.com/",
-    "description": "Curated registry of earthquake-damaged buildings, via its public Supabase API. Damage reports only; trapped/casualty names are not surfaced.",
+    "description": "Official registry of earthquake-damaged buildings, via its public API (api.terremotovenezuela.com). Damage reports only; trapped/casualty names are not surfaced. GeoResponde also submits building-damage reports here (dry-run by default).",
     "logo": "/logos/terremotovenezuela.png",
     "status": "active",
     "adapter": "TerremotoVenezuelaAdapter",
     "capabilities": [
-      "search"
+      "search",
+      "submission"
     ]
   },
   {

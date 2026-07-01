@@ -25,6 +25,7 @@ const TOPIC_LABEL: Record<Report['topic'], string> = {
   'missing-person': 'Missing person',
   'resource-need': 'Resource need',
   'shelter-status': 'Shelter status',
+  'building-damage': 'Damaged building',
 };
 
 /** Human labels for content prose; falls back to the raw field name. */
@@ -42,6 +43,9 @@ const FIELD_LABEL: Record<string, string> = {
   facilityType: 'Type',
   capacityStatus: 'Capacity',
   needs: 'Needs',
+  address: 'Address',
+  buildingType: 'Building type',
+  damageLevel: 'Damage level',
 };
 
 /** The field whose value seeds the title, per topic. */
@@ -49,6 +53,7 @@ const PRIMARY_FIELD: Record<Report['topic'], string> = {
   'missing-person': 'lastSeenLocation',
   'resource-need': 'location',
   'shelter-status': 'facilityName',
+  'building-damage': 'address',
 };
 
 function isPresent(value: unknown): boolean {

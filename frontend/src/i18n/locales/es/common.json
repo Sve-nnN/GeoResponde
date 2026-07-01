@@ -110,7 +110,8 @@
     "topics": {
       "missing-person": "Persona desaparecida",
       "resource-need": "Necesidad de recursos",
-      "shelter-status": "Estado de refugio u hospital"
+      "shelter-status": "Estado de refugio u hospital",
+      "building-damage": "Edificio dañado"
     },
     "fields": {
       "fullName": "Nombre completo",
@@ -128,7 +129,10 @@
       "facilityType": "Tipo de establecimiento",
       "locationCoords": "Coordenadas",
       "capacityStatus": "Estado de capacidad",
-      "needs": "Necesidades"
+      "needs": "Necesidades",
+      "address": "Dirección",
+      "buildingType": "Tipo de edificación",
+      "damageLevel": "Nivel de daño"
     },
     "options": {
       "male": "Masculino",
@@ -143,7 +147,15 @@
       "low": "Baja",
       "medium": "Media",
       "high": "Alta",
-      "critical": "Crítica"
+      "critical": "Crítica",
+      "residential": "Residencial",
+      "commercial": "Comercial",
+      "public": "Público",
+      "mixed": "Uso mixto",
+      "minor": "Leve",
+      "moderate": "Moderado",
+      "severe": "Severo",
+      "destroyed": "Destruido"
     },
     "sensitiveHelper": "Información sensible: compártala solo si usted lo consiente. GeoResponde nunca la almacena.",
     "coordsPlaceholder": "latitud, longitud",

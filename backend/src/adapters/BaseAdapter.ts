@@ -32,6 +32,13 @@ export interface BaseAdapter {
   submissionMode?: SubmissionMode;
   submissionTopics?: readonly ReportTopic[];
   retryable?: boolean;
+
+  /**
+   * Optional read-source hook: adapters that federate a live GeoJSON layer
+   * (e.g. terremotovenezuela damaged buildings) expose it here so the gateway
+   * can proxy it. Purely additive — search/submit adapters may omit it.
+   */
+  getGeoJSON?(): Promise<any>;
 }
 
 /**

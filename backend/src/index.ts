@@ -38,6 +38,16 @@ export function buildApp(): FastifyInstance {
 
   fastify.get('/api/health', async () => ({ ok: true }))
 
+  // Deploy/liveness routes (upstream). Root returns service info; /health is a
+  // bare liveness probe for the hosting platform's health checks.
+  fastify.get('/', async () => ({
+    service: 'GeoResponde Provider Gateway',
+    version: '0.5.0',
+    status: 'operational',
+  }))
+
+  fastify.get('/health', async () => ({ status: 'ok' }))
+
   fastify.get('/api/providers', async () => {
     await ensureReady()
     return gateway.getProviders()

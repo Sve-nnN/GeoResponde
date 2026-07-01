@@ -70,7 +70,7 @@ export function MapViewer({
   const activeLayersWithData = useMemo(() => {
     return layers.filter(l => 
       activeLayerIds.has(l.id) && 
-      (l.id === 'layer-earthquakes' || l.id === 'layer-funvisis' || l.id === 'layer-hospitals' || l.id === 'layer-faults' || l.id === 'layer-geologic-units' || l.id === 'layer-sat-before' || l.id === 'layer-sat-after' || l.id === 'layer-copernicus-damage' || l.id === 'layer-copernicus-ground-movement' || l.id === 'layer-nasa-sentinel-damage' || l.id === 'layer-nasa-interferogram' || l.id === 'layer-citizen-reports')
+      (l.id === 'layer-earthquakes' || l.id === 'layer-funvisis' || l.id === 'layer-hospitals' || l.id === 'layer-faults' || l.id === 'layer-geologic-units' || l.id === 'layer-sat-before' || l.id === 'layer-sat-after' || l.id === 'layer-copernicus-damage' || l.id === 'layer-copernicus-ground-movement' || l.id === 'layer-nasa-sentinel-damage' || l.id === 'layer-nasa-interferogram' || l.id === 'layer-citizen-reports' || l.id === 'layer-verified-buildings')
     );
   }, [layers, activeLayerIds]);
 
@@ -311,6 +311,8 @@ export function MapViewer({
         sourceUrl = '/data/copernicus/groundMovement.geojson';
       } else if (layer.id === 'layer-citizen-reports') {
         sourceUrl = '/data/citizen-reports.geojson';
+      } else if (layer.id === 'layer-verified-buildings') {
+        sourceUrl = 'http://127.0.0.1:3001/api/providers/prov-terremotovenezuela/geojson';
       }
       
       const isRaster = layer.visualization?.type === 'raster';
@@ -333,7 +335,7 @@ export function MapViewer({
       const isSymbol = layer.visualization?.type === 'symbol';
       const isCircle = layer.visualization?.type === 'point' || (!isLine && !isFill && !isSymbol);
 
-      const circleRadius = (layer.id === 'layer-hospitals' || layer.id === 'layer-citizen-reports') ? 5 : [
+      const circleRadius = (layer.id === 'layer-hospitals' || layer.id === 'layer-citizen-reports' || layer.id === 'layer-verified-buildings') ? 5 : [
         'interpolate',
         ['exponential', 2],
         ['coalesce', ['get', 'mag'], 0],
@@ -508,6 +510,13 @@ export function MapViewer({
                   'shelter', '#3498db',
                   'hospital', '#1abc9c',
                   'veterinary', '#f39c12',
+                  color
+                ] : layer.id === 'layer-verified-buildings' ? [
+                  'match',
+                  ['get', 'status'],
+                  'total', '#c0392b',
+                  'severo', '#e67e22',
+                  'parcial', '#f1c40f',
                   color
                 ] : color,
                 'circle-radius': circleRadius as any,

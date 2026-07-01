@@ -1,4 +1,4 @@
-﻿export type LayerCategory = 'Scientific' | 'Infrastructure' | 'Humanitarian' | 'Logistics' | 'Community' | 'Earthquakes' | 'Geology' | 'Satellite' | 'Hazards';
+export type LayerCategory = 'Scientific' | 'Infrastructure' | 'Humanitarian' | 'Logistics' | 'Community' | 'Earthquakes' | 'Geology' | 'Satellite' | 'Hazards';
 
 export interface HumanitarianProvider {
   id: string;
@@ -30,6 +30,24 @@ export type PersonStatus =
 export const GENDER_VALUES = ['male', 'female', 'other', 'unknown'] as const;
 
 export type Gender = (typeof GENDER_VALUES)[number];
+
+/**
+ * Allowed values for the `building-damage` topic's structured selects. Kept as
+ * shared constants so the form options and any downstream mapping stay in sync.
+ */
+export const BUILDING_TYPE_VALUES = [
+  'residential',
+  'commercial',
+  'public',
+  'mixed',
+  'other',
+] as const;
+
+export type BuildingType = (typeof BUILDING_TYPE_VALUES)[number];
+
+export const DAMAGE_LEVEL_VALUES = ['minor', 'moderate', 'severe', 'destroyed'] as const;
+
+export type DamageLevel = (typeof DAMAGE_LEVEL_VALUES)[number];
 
 export interface PersonContact {
   name?: string;
@@ -96,6 +114,7 @@ export interface NormalizedSearchResult {
  * legacy package into a `Report` with {@link toReport}.
  */
 export interface SubmissionPackage {
+  providerId?: string;
   type: string;
   payload: Record<string, any>;
   timestamp: string;
@@ -111,7 +130,11 @@ export interface SubmissionPackage {
  * The report topics GeoResponde composes in v0.5. Extensible by design: add a
  * key here plus an entry in {@link REPORT_TOPICS} and the whole form follows.
  */
-export type ReportTopic = 'missing-person' | 'resource-need' | 'shelter-status';
+export type ReportTopic =
+  | 'missing-person'
+  | 'resource-need'
+  | 'shelter-status'
+  | 'building-damage';
 
 /** Declarative description of one field in a report form. */
 export interface ReportFieldDef {
@@ -166,6 +189,17 @@ export const REPORT_TOPICS: Record<ReportTopic, ReportTopicDef> = {
       { name: 'locationCoords', type: 'coords', required: false },
       { name: 'capacityStatus', type: 'select', required: false, options: ['open', 'full', 'closed', 'unknown'] },
       { name: 'needs', type: 'textarea', required: false },
+      { name: 'reporterContact', type: 'text', required: false },
+    ],
+  },
+  'building-damage': {
+    topic: 'building-damage',
+    fields: [
+      { name: 'address', type: 'text', required: true },
+      { name: 'locationCoords', type: 'coords', required: false },
+      { name: 'buildingType', type: 'select', required: false, options: BUILDING_TYPE_VALUES },
+      { name: 'damageLevel', type: 'select', required: true, options: DAMAGE_LEVEL_VALUES },
+      { name: 'description', type: 'textarea', required: false },
       { name: 'reporterContact', type: 'text', required: false },
     ],
   },

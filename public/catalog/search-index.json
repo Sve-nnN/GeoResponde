@@ -412,5 +412,13 @@
     "id": "layer-nasa-interferogram",
     "title": "NASA Unwrapped Interferogram",
     "type": "layer"
+  },
+  {
+    "id": "layer-verified-buildings",
+    "title": {
+      "en": "Field-Verified Buildings (TerremotoVenezuela)",
+      "es": "Edificios Verificados en Terreno (TerremotoVenezuela)"
+    },
+    "type": "layer"
   }
 ]

@@ -593,6 +593,22 @@
         "type": "raster",
         "url": "https://tiledimageservices7.arcgis.com/WSiUmUhlFx4CtMBB/arcgis/rest/services/202610_sentinel1_unwrappedInterferogram/ImageServer/tile/{z}/{y}/{x}"
       }
+    },
+    {
+      "id": "layer-verified-buildings",
+      "name": {
+        "en": "Field-Verified Buildings (TerremotoVenezuela)",
+        "es": "Edificios Verificados en Terreno (TerremotoVenezuela)"
+      },
+      "datasetIds": [],
+      "category": "Humanitarian",
+      "confidence": "Official",
+      "refreshFrequency": "Real-time",
+      "enabled": false,
+      "visualization": {
+        "type": "point",
+        "color": "#f39c12"
+      }
     }
   ],
   "providers": [
@@ -774,12 +790,13 @@
       "id": "prov-terremotovenezuela",
       "display_name": "Terremoto Venezuela",
       "website": "https://terremotovenezuela.com/",
-      "description": "Curated registry of earthquake-damaged buildings, via its public Supabase API. Damage reports only; trapped/casualty names are not surfaced.",
+      "description": "Official registry of earthquake-damaged buildings, via its public API (api.terremotovenezuela.com). Damage reports only; trapped/casualty names are not surfaced. GeoResponde also submits building-damage reports here (dry-run by default).",
       "logo": "/logos/terremotovenezuela.png",
       "status": "active",
       "adapter": "TerremotoVenezuelaAdapter",
       "capabilities": [
-        "search"
+        "search",
+        "submission"
       ]
     },
     {

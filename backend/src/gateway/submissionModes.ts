@@ -52,11 +52,13 @@ function shortSummary(report: Report): string {
     'missing-person': 'Persona desaparecida',
     'resource-need': 'Necesidad de recursos',
     'shelter-status': 'Estado de refugio',
+    'building-damage': 'Edificio dañado',
   };
   const primary =
     report.fields.fullName ??
     report.fields.facilityName ??
     report.fields.location ??
+    report.fields.address ??
     report.fields.lastSeenLocation;
   return isPresent(primary)
     ? `${label[report.topic]} - ${stringify(primary)}`
