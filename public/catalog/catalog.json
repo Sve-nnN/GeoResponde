@@ -688,12 +688,13 @@
       "id": "prov-venezuelareporta",
       "display_name": "Venezuela Reporta",
       "website": "https://venezuelareporta.org/",
-      "description": "Consolidated citizen registry of affected persons, via the official open Venezuela Reporta API.",
+      "description": "Consolidated citizen registry of affected persons, via the official open Venezuela Reporta API. GeoResponde both searches the registry and submits missing-person reports to it via POST /api/v1/personas (dry-run by default).",
       "logo": "/logos/venezuelareporta.png",
       "status": "active",
       "adapter": "VenezuelaReportaAdapter",
       "capabilities": [
-        "search"
+        "search",
+        "submission"
       ]
     },
     {
