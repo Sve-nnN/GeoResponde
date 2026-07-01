@@ -1,4 +1,4 @@
-import { HumanitarianProvider, NormalizedSearchResult, SubmissionPackage } from '@georesponde/shared';
+import { HumanitarianProvider, NormalizedSearchResult, Report, SubmissionResult } from '@georesponde/shared';
 import { BaseAdapter } from '../adapters/BaseAdapter.js';
 
 export class MockHumanitarianAdapter implements BaseAdapter {
@@ -39,8 +39,9 @@ export class MockHumanitarianAdapter implements BaseAdapter {
     ];
   }
 
-  async submit(pkg: SubmissionPackage): Promise<boolean> {
-    console.log(`[Mock] Submitting to provider ${this.provider.id}`, pkg);
-    return true;
+  async submit(report: Report): Promise<SubmissionResult> {
+    // Never log report.fields — may carry sensitive PII (cédula, contact).
+    console.log(`[Mock] Submitting ${report.topic} report to provider ${this.provider.id}`);
+    return { provider: this.provider.id, mode: 'dry-run', status: 'skipped' };
   }
 }

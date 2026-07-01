@@ -1,5 +1,5 @@
 import { BaseAdapter } from '../BaseAdapter.js';
-import { HumanitarianProvider, NormalizedSearchResult, SubmissionPackage } from '@georesponde/shared';
+import { HumanitarianProvider, NormalizedSearchResult, Report, SubmissionResult } from '@georesponde/shared';
 import { fetchJson } from '../../transports/rest/client.js';
 import { parseMiGenteVeResponse, MiGenteVeResponse } from './parser.js';
 
@@ -38,7 +38,7 @@ export class MiGenteVeAdapter implements BaseAdapter {
     }
   }
 
-  async submit(_pkg: SubmissionPackage): Promise<boolean> {
-    throw new Error('Not implemented');
+  async submit(_report: Report): Promise<SubmissionResult> {
+    return { provider: this.provider.id, mode: 'dry-run', status: 'skipped' };
   }
 }

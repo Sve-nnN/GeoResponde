@@ -44,7 +44,7 @@ describe('adapter registry', () => {
         return [];
       }
       async submit() {
-        return true;
+        return { provider: this.provider.id, mode: 'dry-run' as const, status: 'skipped' as const };
       }
     }
 
