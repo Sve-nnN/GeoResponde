@@ -663,7 +663,13 @@ export function MapViewer({
           Loading NASA Data...
         </div>
       )}
-      <CopernicusLegend activeLayerIds={activeLayerIds} />
+      <CopernicusLegend
+        activeLayerIds={activeLayerIds}
+        showEonet={showEonet}
+        eonetActiveCategories={eonetActiveCategories}
+        showAidSites={showAidSites}
+        aidSiteActiveTipos={aidSiteActiveTipos}
+      />
     </div>
   );
 }

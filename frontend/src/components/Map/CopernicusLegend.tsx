@@ -1,8 +1,25 @@
+import { useTranslation } from 'react-i18next';
+import { EONET_CATEGORIES, CATEGORY_COLORS } from '../../lib/eonet';
+import { AID_SITE_TIPOS, TIPO_COLORS } from '../../lib/sitios';
+
 interface CopernicusLegendProps {
   activeLayerIds: Set<string>;
+  /** EONET events layer state (a dynamic, non-catalog source). */
+  showEonet?: boolean;
+  eonetActiveCategories?: Set<string>;
+  /** Aid-sites layer state (a dynamic, non-catalog source). */
+  showAidSites?: boolean;
+  aidSiteActiveTipos?: Set<string>;
 }
 
-export function CopernicusLegend({ activeLayerIds }: CopernicusLegendProps) {
+export function CopernicusLegend({
+  activeLayerIds,
+  showEonet = false,
+  eonetActiveCategories,
+  showAidSites = false,
+  aidSiteActiveTipos,
+}: CopernicusLegendProps) {
+  const { t } = useTranslation();
   const hasDamage = activeLayerIds.has('layer-copernicus-damage');
   const hasBuildings = hasDamage;
   const hasRoads = hasDamage;
@@ -11,7 +28,25 @@ export function CopernicusLegend({ activeLayerIds }: CopernicusLegendProps) {
   const hasFaults = activeLayerIds.has('layer-faults');
   const hasCitizenReports = activeLayerIds.has('layer-citizen-reports');
 
-  if (!hasBuildings && !hasRoads && !hasGroundMovement && !hasNasa && !hasFaults && !hasCitizenReports) {
+  const eonetCats = EONET_CATEGORIES.filter(
+    (id) => !eonetActiveCategories || eonetActiveCategories.has(id),
+  );
+  const sitioTipos = AID_SITE_TIPOS.filter(
+    (id) => !aidSiteActiveTipos || aidSiteActiveTipos.has(id),
+  );
+  const hasEonet = showEonet && eonetCats.length > 0;
+  const hasSitios = showAidSites && sitioTipos.length > 0;
+
+  if (
+    !hasBuildings &&
+    !hasRoads &&
+    !hasGroundMovement &&
+    !hasNasa &&
+    !hasFaults &&
+    !hasCitizenReports &&
+    !hasEonet &&
+    !hasSitios
+  ) {
     return null;
   }
 
@@ -151,6 +186,38 @@ export function CopernicusLegend({ activeLayerIds }: CopernicusLegendProps) {
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{ width: '10px', height: '10px', backgroundColor: item.color, borderRadius: '50%', border: '1px solid #fff' }}></div>
                 <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {hasEonet && (
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+            {t('situation.eonet.legendHeading')}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {eonetCats.map((id) => (
+              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '10px', height: '10px', backgroundColor: CATEGORY_COLORS[id], borderRadius: '50%', border: '1px solid #fff' }}></div>
+                <span>{t(`situation.eonet.categories.${id}`)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {hasSitios && (
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+            {t('situation.sitios.legendHeading')}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {sitioTipos.map((id) => (
+              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '10px', height: '10px', backgroundColor: TIPO_COLORS[id], borderRadius: '50%', border: '1px solid #fff' }}></div>
+                <span>{t(`situation.sitios.tipos.${id}`)}</span>
               </div>
             ))}
           </div>
