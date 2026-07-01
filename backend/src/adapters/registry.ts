@@ -1,6 +1,15 @@
 import { HumanitarianProvider } from '@georesponde/shared';
 import { BaseAdapter } from './BaseAdapter.js';
 import { VenezuelaTeBuscaAdapter } from './venezuelatebusca/adapter.js';
+import { HdxAdapter } from './hdx/adapter.js';
+import { EncuentralosAdapter } from './encuentralos/adapter.js';
+import { UbicameAdapter } from './ubicame/adapter.js';
+import { BuscaEnListasAdapter } from './buscaenlistas/adapter.js';
+import { ApoyoSaluAdapter } from './apoyo-salu/adapter.js';
+import { VenezuelaReportaAdapter } from './venezuelareporta/adapter.js';
+import { DesaparecidosTerremotoAdapter } from './desaparecidos-terremoto/adapter.js';
+import { HazloHoyAdapter } from './hazlohoy/adapter.js';
+import { ReencuentraVeAdapter } from './reencuentra-ve/adapter.js';
 
 /**
  * Any class that can build a BaseAdapter from a provider configuration.
@@ -41,3 +50,12 @@ export function registeredAdapters(): string[] {
 
 // --- Built-in adapters -------------------------------------------------------
 registerAdapter('VenezuelaTeBuscaAdapter', VenezuelaTeBuscaAdapter);
+registerAdapter('HdxAdapter', HdxAdapter);
+registerAdapter('EncuentralosAdapter', EncuentralosAdapter);
+registerAdapter('UbicameAdapter', UbicameAdapter);
+registerAdapter('BuscaEnListasAdapter', BuscaEnListasAdapter);
+registerAdapter('ApoyoSaluAdapter', ApoyoSaluAdapter);
+registerAdapter('VenezuelaReportaAdapter', VenezuelaReportaAdapter);
+registerAdapter('DesaparecidosTerremotoAdapter', DesaparecidosTerremotoAdapter);
+registerAdapter('HazloHoyAdapter', HazloHoyAdapter);
+registerAdapter('ReencuentraVeAdapter', ReencuentraVeAdapter);
