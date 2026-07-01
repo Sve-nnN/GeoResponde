@@ -19,6 +19,7 @@ interface Props {
   eonetActiveCategories?: Set<string>;
   eonetSelectedId?: string | null;
   onEonetSelect?: (id: string | null) => void;
+  eonetCountry?: string;
 }
 
 export function MapViewer({
@@ -30,6 +31,7 @@ export function MapViewer({
   eonetActiveCategories,
   eonetSelectedId,
   onEonetSelect,
+  eonetCountry,
 }: Props) {
   const { layers } = useCatalog();
   const mapRef = useRef<MapRef>(null);
@@ -617,6 +619,7 @@ export function MapViewer({
             activeCategories={eonetActiveCategories}
             selectedId={eonetSelectedId}
             onSelect={onEonetSelect}
+            country={eonetCountry}
           />
         )}
         {renderPopup()}

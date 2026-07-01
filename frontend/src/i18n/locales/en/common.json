@@ -38,6 +38,15 @@
       "timelineLabel": "Timeline",
       "listHeading": "Events by appearance",
       "emptyList": "No events yet for this cutoff.",
+      "controlsHeading": "Filters",
+      "countryLabel": "Country",
+      "categoriesLabel": "Categories",
+      "legendHeading": "Legend",
+      "earthquakesOut": "EONET earthquakes are out of scope (dead 2015–2018). For live earthquakes, see the",
+      "usgsLink": "USGS Earthquake Hazards Program",
+      "countries": {
+        "VE": "Venezuela"
+      },
       "categories": {
         "floods": "Floods",
         "wildfires": "Wildfires",

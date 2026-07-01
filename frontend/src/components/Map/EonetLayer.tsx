@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Source, Layer as MapLayer, Popup, useMap } from 'react-map-gl';
 import type { MapLayerMouseEvent } from 'react-map-gl';
 import { useTranslation } from 'react-i18next';
+import { COUNTRY_BBOX } from '@georesponde/shared';
 import { CATEGORY_COLORS, CATEGORY_COLOR_FALLBACK, type RenderFeature } from '../../lib/eonet';
 
 export const EONET_LAYER_ID = 'eonet-events-viz';
@@ -12,6 +13,8 @@ interface Props {
   activeCategories?: Set<string>;
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+  /** When set, the camera fits this country's registry bbox on change. */
+  country?: string;
 }
 
 interface PopupState {
@@ -65,6 +68,7 @@ export function EonetLayer({
   activeCategories,
   selectedId,
   onSelect,
+  country,
 }: Props) {
   const { t } = useTranslation();
   const map = useMap().current;
@@ -123,6 +127,15 @@ export function EonetLayer({
     setPopup(popupFromFeature(f));
     map?.easeTo({ center: f.geometry.coordinates, duration: 600 });
   }, [selectedId, features, map]);
+
+  // Follow the selected country: fit its registry bbox ([W, N, E, S]).
+  useEffect(() => {
+    if (!map || !country) return;
+    const box = COUNTRY_BBOX[country];
+    if (!box) return;
+    const [w, n, e, s] = box;
+    map.fitBounds([[w, s], [e, n]], { padding: 40, duration: 800 });
+  }, [map, country]);
 
   const filter: unknown[] | undefined = (() => {
     const clauses: unknown[] = ['all'];

@@ -38,6 +38,15 @@
       "timelineLabel": "Línea de tiempo",
       "listHeading": "Eventos por aparición",
       "emptyList": "Aún no hay eventos para este corte.",
+      "controlsHeading": "Filtros",
+      "countryLabel": "País",
+      "categoriesLabel": "Categorías",
+      "legendHeading": "Leyenda",
+      "earthquakesOut": "Los sismos de EONET están fuera de alcance (inactivos 2015–2018). Para sismos en vivo, consulta el",
+      "usgsLink": "Programa de Amenazas Sísmicas del USGS",
+      "countries": {
+        "VE": "Venezuela"
+      },
       "categories": {
         "floods": "Inundaciones",
         "wildfires": "Incendios forestales",

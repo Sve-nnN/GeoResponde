@@ -7,6 +7,8 @@ import { MapViewer } from '../components/Map/MapViewer';
 import { Sidebar } from '../components/Sidebar/Sidebar';
 import { EonetTimeline } from '../components/Situation/EonetTimeline';
 import { EonetList } from '../components/Situation/EonetList';
+import { EonetControls } from '../components/Situation/EonetControls';
+import { EonetLegend } from '../components/Situation/EonetLegend';
 
 export function Situation() {
   const { t } = useTranslation();
@@ -16,9 +18,22 @@ export function Situation() {
   const [showEonet, setShowEonet] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [visibleEpoch, setVisibleEpoch] = useState<number>(0);
+  const [country, setCountry] = useState('VE');
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(
+    () => new Set(EONET_CATEGORIES),
+  );
 
-  const { features: eonetFeatures } = useEonetEvents('VE', EONET_CATEGORIES as unknown as string[]);
+  const { features: eonetFeatures } = useEonetEvents(country, [...activeCategories]);
   const range = appearanceRange(eonetFeatures);
+
+  const toggleCategory = (id: string) => {
+    setActiveCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // When a new dataset loads (country/category refetch), reset the timeline
   // cutoff to the latest first-appearance so all events show initially.
@@ -81,8 +96,10 @@ export function Situation() {
         eonetFeatures={eonetFeatures}
         showEonet={showEonet}
         eonetVisibleEpoch={showEonet ? visibleEpoch : null}
+        eonetActiveCategories={showEonet ? activeCategories : undefined}
         eonetSelectedId={selectedId}
         onEonetSelect={setSelectedId}
+        eonetCountry={showEonet ? country : undefined}
       />
       <div
         style={{
@@ -124,6 +141,13 @@ export function Situation() {
         </label>
         {showEonet && (
           <>
+            <EonetControls
+              country={country}
+              onCountry={setCountry}
+              activeCategories={activeCategories}
+              onToggleCategory={toggleCategory}
+            />
+            <EonetLegend activeCategories={activeCategories} />
             <EonetTimeline
               min={range.min}
               max={range.max}
