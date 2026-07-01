@@ -56,6 +56,23 @@
         "volcanoes": "Volcanes",
         "landslides": "Deslizamientos"
       }
+    },
+    "sitios": {
+      "layerLabel": "Sitios de ayuda",
+      "legendHeading": "Tipos de sitio de ayuda",
+      "estadoOperativo": "Estado operativo",
+      "necesidades": "Necesidades",
+      "frescura": "Actualización",
+      "viewRecord": "Ver ficha",
+      "untitled": "Sitio de ayuda",
+      "attribution": "Fuente: Venezuela Reporta",
+      "tipos": {
+        "acopio": "Centro de acopio",
+        "clinica": "Clínica",
+        "hospital": "Hospital",
+        "refugio": "Refugio",
+        "otro": "Otro"
+      }
     }
   },
   "find": {

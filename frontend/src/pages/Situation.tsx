@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCatalog } from '../hooks/useCatalog';
 import { useEonetEvents } from '../hooks/useEonetEvents';
+import { useAidSites } from '../hooks/useAidSites';
 import { EONET_CATEGORIES, appearanceRange } from '../lib/eonet';
+import { AID_SITE_TIPOS } from '../lib/sitios';
 import { MapViewer } from '../components/Map/MapViewer';
 import { Sidebar } from '../components/Sidebar/Sidebar';
 import { EonetTimeline } from '../components/Situation/EonetTimeline';
 import { EonetList } from '../components/Situation/EonetList';
 import { EonetControls } from '../components/Situation/EonetControls';
 import { EonetLegend } from '../components/Situation/EonetLegend';
+import { AidSitesLegend } from '../components/Situation/AidSitesLegend';
 
 export function Situation() {
   const { t } = useTranslation();
@@ -22,8 +25,11 @@ export function Situation() {
   const [activeCategories, setActiveCategories] = useState<Set<string>>(
     () => new Set(EONET_CATEGORIES),
   );
+  const [showSitios, setShowSitios] = useState(false);
+  const [activeTipos] = useState<Set<string>>(() => new Set(AID_SITE_TIPOS));
 
   const { features: eonetFeatures } = useEonetEvents(country, [...activeCategories]);
+  const { features: aidSiteFeatures } = useAidSites(showSitios);
   const range = appearanceRange(eonetFeatures);
 
   const toggleCategory = (id: string) => {
@@ -100,6 +106,9 @@ export function Situation() {
         eonetSelectedId={selectedId}
         onEonetSelect={setSelectedId}
         eonetCountry={showEonet ? country : undefined}
+        aidSiteFeatures={aidSiteFeatures}
+        showAidSites={showSitios}
+        aidSiteActiveTipos={showSitios ? activeTipos : undefined}
       />
       <div
         style={{
@@ -179,6 +188,30 @@ export function Situation() {
             />
           </>
         )}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: '#1e293b',
+            border: '1px solid #334155',
+            color: '#e2e8f0',
+            padding: '10px 12px',
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={showSitios}
+            onChange={(e) => setShowSitios(e.target.checked)}
+          />
+          {t('situation.sitios.layerLabel')}
+        </label>
+        {showSitios && <AidSitesLegend activeTipos={activeTipos} />}
       </div>
       <Sidebar
         activeLayerIds={activeLayerIds} 

@@ -418,3 +418,55 @@ export interface SituationFeatureCollection {
   type: 'FeatureCollection';
   features: SituationFeature[];
 }
+
+/**
+ * ---------------------------------------------------------------------------
+ * Aid-site contracts (Venezuela Reporta `/api/v1/sitios`)
+ * ---------------------------------------------------------------------------
+ * Normalized, MapLibre-facing shape for an aid site (collection center, clinic,
+ * hospital, shelter, ...) sourced from Venezuela Reporta. Each site carries
+ * lat/lng, so the backend pre-shapes a GeoJSON Point FeatureCollection the
+ * Situation map renders directly — the frontend never touches VR nor its
+ * 120 req/min budget. Attribution ("Venezuela Reporta") is required on this data.
+ */
+
+/** Known Venezuela Reporta aid-site types. Any other value is passed through as-is. */
+export type AidSiteTipo = 'acopio' | 'clinica' | 'hospital' | 'refugio' | 'otro';
+
+/** Properties carried by a normalized aid-site GeoJSON Point Feature. */
+export interface AidSiteFeatureProperties {
+  /** Venezuela Reporta site id. */
+  id: string;
+  /** Site type — one of {@link AidSiteTipo}, or an unknown passthrough string. */
+  tipo: string;
+  nombre: string;
+  municipio?: string;
+  /** Free-text operational status (e.g. "operativo", "saturado"). */
+  estado_operativo?: string;
+  /** Declared needs at the site. Always an array (empty when none reported). */
+  necesidades: string[];
+  personas_estimadas?: number;
+  nota?: string;
+  /** Freshness bucket reported by VR (e.g. "reciente", "hoy", "antiguo"). */
+  frescura?: string;
+  /** ISO timestamp of the most recent report about the site. */
+  ultimo_reporte_at?: string;
+  /** Deep-link to the site's VR record, when present. */
+  fichaUrl?: string;
+}
+
+/** A GeoJSON Point Feature carrying normalized aid-site properties. */
+export interface AidSiteFeature {
+  type: 'Feature';
+  geometry: SituationPointGeometry;
+  properties: AidSiteFeatureProperties;
+}
+
+/**
+ * GeoJSON FeatureCollection of aid sites. The stable contract the Situation
+ * map's "Aid sites" layer consumes.
+ */
+export interface AidSiteFeatureCollection {
+  type: 'FeatureCollection';
+  features: AidSiteFeature[];
+}

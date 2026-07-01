@@ -6,7 +6,9 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useCatalog } from '../../hooks/useCatalog';
 import { CopernicusLegend } from './CopernicusLegend';
 import { EonetLayer, EONET_LAYER_ID } from './EonetLayer';
+import { AidSitesLayer, AID_SITES_LAYER_ID } from './AidSitesLayer';
 import type { RenderFeature } from '../../lib/eonet';
+import type { AidSiteRenderFeature } from '../../lib/sitios';
 import { useArcGISFeatureLayer } from '../../hooks/useArcGISFeatureLayer';
 import { useRef } from 'react';
 interface Props {
@@ -20,6 +22,9 @@ interface Props {
   eonetSelectedId?: string | null;
   onEonetSelect?: (id: string | null) => void;
   eonetCountry?: string;
+  aidSiteFeatures?: AidSiteRenderFeature[];
+  showAidSites?: boolean;
+  aidSiteActiveTipos?: Set<string>;
 }
 
 export function MapViewer({
@@ -32,6 +37,9 @@ export function MapViewer({
   eonetSelectedId,
   onEonetSelect,
   eonetCountry,
+  aidSiteFeatures = [],
+  showAidSites = false,
+  aidSiteActiveTipos,
 }: Props) {
   const { layers } = useCatalog();
   const mapRef = useRef<MapRef>(null);
@@ -69,9 +77,13 @@ export function MapViewer({
     const { features, lngLat } = event;
     const hoveredFeature = features && features[0];
 
-    // EONET circles own their own popup (EonetLayer via useMap); don't let the
-    // generic catalog popup capture them.
-    if (hoveredFeature && hoveredFeature.layer?.id === EONET_LAYER_ID) {
+    // EONET circles and aid-site circles own their own popups (via useMap);
+    // don't let the generic catalog popup capture them.
+    if (
+      hoveredFeature &&
+      (hoveredFeature.layer?.id === EONET_LAYER_ID ||
+        hoveredFeature.layer?.id === AID_SITES_LAYER_ID)
+    ) {
       setHoverInfo(null);
       return;
     }
@@ -595,6 +607,7 @@ export function MapViewer({
         interactiveLayerIds={[
           ...getInteractiveIds(activeLayersWithData),
           ...(showEonet ? [EONET_LAYER_ID] : []),
+          ...(showAidSites ? [AID_SITES_LAYER_ID] : []),
         ]}
         onClick={onHover}
         onMouseMove={(e) => {
@@ -621,6 +634,9 @@ export function MapViewer({
             onSelect={onEonetSelect}
             country={eonetCountry}
           />
+        )}
+        {showAidSites && (
+          <AidSitesLayer features={aidSiteFeatures} activeTipos={aidSiteActiveTipos} />
         )}
         {renderPopup()}
       </Map>

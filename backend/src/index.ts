@@ -5,6 +5,7 @@ import { REPORT_TOPICS, validateReport, type Report, type SubmissionReport, type
 import { ProviderGateway } from './gateway/ProviderGateway.js'
 import { VenezuelaTeBuscaAdapter } from './adapters/venezuelatebusca/adapter.js'
 import { fetchEonetEvents } from './adapters/eonet/service.js'
+import { fetchAidSites } from './adapters/sitios/service.js'
 
 /**
  * Build and configure the Provider Gateway HTTP app. Exported so it can run
@@ -63,6 +64,22 @@ export function buildApp(): FastifyInstance {
     }
     const result = await fetchEonetEvents({ status, category, bbox, start, end })
     reply.header('X-EONET-Source', result.source)
+    return result.collection
+  })
+
+  // Situation map aid-site layer. Proxies Venezuela Reporta's
+  // /api/v1/sitios as cached, pre-shaped GeoJSON. The frontend MUST hit this
+  // gateway route, never VR directly — the volatile TTL cache and the 120
+  // req/min budget live here. Attribution ("Venezuela Reporta") is required on
+  // this data. Degrades gracefully (X-Sitios-Source reflects it), never 5xx.
+  fastify.get('/api/sitios', async (request, reply) => {
+    const { tipo, municipio } = request.query as {
+      tipo?: string
+      municipio?: string
+    }
+    const result = await fetchAidSites({ tipo, municipio })
+    reply.header('X-Sitios-Source', result.source)
+    reply.header('X-Attribution', 'Venezuela Reporta')
     return result.collection
   })
 
