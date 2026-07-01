@@ -87,6 +87,36 @@
         "refugio": "Refugio",
         "otro": "Otro"
       }
+    },
+    "legend": {
+      "title": "Leyenda de capas",
+      "nasaTitle": "Daño Sentinel de la NASA",
+      "nasaSubtitle": "Probabilidad de daño",
+      "nasaHigh": "Alta (75%+)",
+      "nasaMedium": "Media (50%)",
+      "nasaLow": "Baja (25%)",
+      "groundMovementTitle": "Movimiento del terreno (LOS) (m)",
+      "builtUpTitle": "Área construida",
+      "destroyed": "Destruido",
+      "damaged": "Dañado",
+      "possiblyDamaged": "Posiblemente dañado",
+      "noVisibleDamage": "Sin daño visible",
+      "notAnalysed": "No analizado",
+      "transportTitle": "Red de transporte",
+      "highway": "Autopista",
+      "mainRoad": "Vía principal",
+      "localRoad": "Vía local",
+      "track": "Camino",
+      "damageNote": "* El rojo/naranja indica daño",
+      "faultsTitle": "Fallas tectónicas",
+      "plateBoundary": "Límite de placa",
+      "activeFault": "Falla activa",
+      "citizenTitle": "Reportes ciudadanos",
+      "missingPerson": "Persona desaparecida",
+      "foundPerson": "Persona encontrada",
+      "shelter": "Refugio",
+      "hospital": "Hospital",
+      "veterinary": "Veterinaria"
     }
   },
   "find": {

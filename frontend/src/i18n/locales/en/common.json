@@ -87,6 +87,36 @@
         "refugio": "Shelter",
         "otro": "Other"
       }
+    },
+    "legend": {
+      "title": "Layer Legend",
+      "nasaTitle": "NASA Sentinel Damage",
+      "nasaSubtitle": "Probability of damage",
+      "nasaHigh": "High (75%+)",
+      "nasaMedium": "Medium (50%)",
+      "nasaLow": "Low (25%)",
+      "groundMovementTitle": "Ground Movement (LOS) (m)",
+      "builtUpTitle": "Built Up Area",
+      "destroyed": "Destroyed",
+      "damaged": "Damaged",
+      "possiblyDamaged": "Possibly damaged",
+      "noVisibleDamage": "No visible damage",
+      "notAnalysed": "Not Analysed",
+      "transportTitle": "Transportation Network",
+      "highway": "Highway",
+      "mainRoad": "Main road",
+      "localRoad": "Local road",
+      "track": "Track",
+      "damageNote": "* Red/Orange indicates damage",
+      "faultsTitle": "Tectonic Faults",
+      "plateBoundary": "Plate Boundary",
+      "activeFault": "Active Fault",
+      "citizenTitle": "Citizen Reports",
+      "missingPerson": "Missing Person",
+      "foundPerson": "Found Person",
+      "shelter": "Shelter",
+      "hospital": "Hospital",
+      "veterinary": "Veterinary"
     }
   },
   "find": {

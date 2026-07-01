@@ -66,17 +66,17 @@ export function CopernicusLegend({
       maxHeight: '300px',
       overflowY: 'auto'
     }}>
-      <div style={{ fontWeight: 'bold', marginBottom: '8px', borderBottom: '1px solid #ccc', paddingBottom: '4px' }}>Layer Legend</div>
+      <div style={{ fontWeight: 'bold', marginBottom: '8px', borderBottom: '1px solid #ccc', paddingBottom: '4px' }}>{t('situation.legend.title')}</div>
 
       {hasNasa && (
         <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>NASA Sentinel Damage</div>
-          <div style={{ fontSize: '10px', color: '#666', marginBottom: '4px' }}>Probability of damage</div>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{t('situation.legend.nasaTitle')}</div>
+          <div style={{ fontSize: '10px', color: '#666', marginBottom: '4px' }}>{t('situation.legend.nasaSubtitle')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {[
-              { label: 'High (75%+)', color: '#e60000' },
-              { label: 'Medium (50%)', color: '#ff5500' },
-              { label: 'Low (25%)', color: '#ffff73' }
+              { label: t('situation.legend.nasaHigh'), color: '#e60000' },
+              { label: t('situation.legend.nasaMedium'), color: '#ff5500' },
+              { label: t('situation.legend.nasaLow'), color: '#ffff73' }
             ].map(item => (
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{ width: '12px', height: '12px', backgroundColor: item.color, border: '1px solid #666' }}></div>
@@ -89,7 +89,7 @@ export function CopernicusLegend({
 
       {hasGroundMovement && (
         <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Ground Movement (LOS) (m)</div>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{t('situation.legend.groundMovementTitle')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {[
               { label: 'Above 0.5', color: '#a50026' },
@@ -113,14 +113,14 @@ export function CopernicusLegend({
 
       {hasBuildings && (
         <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Built Up Area</div>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{t('situation.legend.builtUpTitle')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {[
-              { label: 'Destroyed', color: '#c0392b' },
-              { label: 'Damaged', color: '#d35400' },
-              { label: 'Possibly damaged', color: '#f39c12' },
-              { label: 'No visible damage', color: '#27ae60' },
-              { label: 'Not Analysed', color: '#7f8c8d' }
+              { label: t('situation.legend.destroyed'), color: '#c0392b' },
+              { label: t('situation.legend.damaged'), color: '#d35400' },
+              { label: t('situation.legend.possiblyDamaged'), color: '#f39c12' },
+              { label: t('situation.legend.noVisibleDamage'), color: '#27ae60' },
+              { label: t('situation.legend.notAnalysed'), color: '#7f8c8d' }
             ].map(item => (
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{ width: '12px', height: '12px', backgroundColor: item.color, border: '1px solid #666' }}></div>
@@ -133,40 +133,40 @@ export function CopernicusLegend({
 
       {hasRoads && (
         <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Transportation Network</div>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{t('situation.legend.transportTitle')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '20px', height: '3px', backgroundColor: '#ffbebe', borderTop: '1px solid #686868', borderBottom: '1px solid #686868' }}></div>
-              <span>Highway</span>
+              <span>{t('situation.legend.highway')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '20px', height: '2px', backgroundColor: '#ffffff', borderTop: '1px solid #686868', borderBottom: '1px solid #686868' }}></div>
-              <span>Main road</span>
+              <span>{t('situation.legend.mainRoad')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '20px', height: '1px', backgroundColor: '#b2b2b2', borderTop: '1px solid #686868', borderBottom: '1px solid #686868' }}></div>
-              <span>Local road</span>
+              <span>{t('situation.legend.localRoad')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '20px', height: '1px', borderTop: '2px dashed #b2b2b2', marginTop: '2px' }}></div>
-              <span>Track</span>
+              <span>{t('situation.legend.track')}</span>
             </div>
-            <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>* Red/Orange indicates damage</div>
+            <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>{t('situation.legend.damageNote')}</div>
           </div>
         </div>
       )}
 
       {hasFaults && (
         <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Tectonic Faults</div>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{t('situation.legend.faultsTitle')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '20px', height: '3px', backgroundColor: '#e74c3c' }}></div>
-              <span>Plate Boundary</span>
+              <span>{t('situation.legend.plateBoundary')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '20px', height: '2px', backgroundColor: '#f1c40f' }}></div>
-              <span>Active Fault</span>
+              <span>{t('situation.legend.activeFault')}</span>
             </div>
           </div>
         </div>
@@ -174,14 +174,14 @@ export function CopernicusLegend({
 
       {hasCitizenReports && (
         <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Citizen Reports</div>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{t('situation.legend.citizenTitle')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {[
-              { label: 'Missing Person', color: '#e74c3c' },
-              { label: 'Found Person', color: '#2ecc71' },
-              { label: 'Shelter', color: '#3498db' },
-              { label: 'Hospital', color: '#1abc9c' },
-              { label: 'Veterinary', color: '#f39c12' }
+              { label: t('situation.legend.missingPerson'), color: '#e74c3c' },
+              { label: t('situation.legend.foundPerson'), color: '#2ecc71' },
+              { label: t('situation.legend.shelter'), color: '#3498db' },
+              { label: t('situation.legend.hospital'), color: '#1abc9c' },
+              { label: t('situation.legend.veterinary'), color: '#f39c12' }
             ].map(item => (
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{ width: '10px', height: '10px', backgroundColor: item.color, borderRadius: '50%', border: '1px solid #fff' }}></div>
