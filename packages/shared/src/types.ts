@@ -222,6 +222,18 @@ export interface SubmissionResult {
   submittedAt?: string;
   /** Whether this outcome is safe to retry (surfaced by retry-aware adapters). */
   retryable?: boolean;
+  /**
+   * Handoff for no-API providers (REP-08). When a provider has no submission
+   * API, GeoResponde acts as a courier, not an author: it returns the tier the
+   * user should use to submit on the provider's OWN domain. `actionUrl` is the
+   * prefilled deep-link or `mailto:` URL; `body` is the copy-to-clipboard manual
+   * text. Additive + optional: every prior `SubmissionResult` still type-checks.
+   */
+  action?: {
+    tier: SubmissionMode;
+    actionUrl?: string;
+    body?: string;
+  };
 }
 
 /**
