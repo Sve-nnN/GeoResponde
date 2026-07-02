@@ -4,6 +4,8 @@ import { pathToFileURL } from 'url'
 import { resolveCorsOrigin } from './config/cors.js'
 import { REPORT_TOPICS, validateReport, type Report, type SubmissionReport, type ReportFieldError } from '@georesponde/shared'
 import { ProviderGateway } from './gateway/ProviderGateway.js'
+import { HealthTracker } from './gateway/health/HealthTracker.js'
+import { HealthProbeService } from './gateway/health/HealthProbeService.js'
 import { VenezuelaTeBuscaAdapter } from './adapters/venezuelatebusca/adapter.js'
 import { fetchEonetEvents } from './adapters/eonet/service.js'
 import { fetchAidSites } from './adapters/sitios/service.js'
@@ -71,6 +73,17 @@ export function buildApp(): FastifyInstance {
   let ready: Promise<void> | null = null
   const ensureReady = () => (ready ??= gateway.initialize())
 
+  // Provider health observability (Phase 18 / HEALTH-12). One HealthTracker +
+  // HealthProbeService instance lives in this SAME scope as `gateway`, so
+  // recorded metrics accumulate across requests within the process (volatile,
+  // in-memory, resets on cold start — the disclosed tradeoff from the
+  // approved proposal). The probe fn is bound to gateway.inspect, which is
+  // already degrade-safe (never throws), and the service itself throttles
+  // and dedupes real probes so client poll frequency never scales into
+  // upstream request volume (T-18-02).
+  const healthTracker = new HealthTracker()
+  const healthProbe = new HealthProbeService({ tracker: healthTracker, probe: (id, q) => gateway.inspect(id, q) })
+
   // Warm the full NASA DPM set in the BACKGROUND at startup so the first viewport
   // request is served from memory instead of triggering the ~110s extraction.
   // Fire-and-forget: it must NOT delay boot, and any failure degrades safely (the
@@ -99,6 +112,27 @@ export function buildApp(): FastifyInstance {
   fastify.get('/api/providers', async () => {
     await ensureReady()
     return gateway.getProviders()
+  })
+
+  // Aggregated per-provider health snapshot (Phase 18 / HEALTH-12). The
+  // dashboard (Phase 19) polls this route; it fans out through the
+  // throttled/stampede-guarded HealthProbeService, never client input, and
+  // is intentionally degrade-safe: it MUST NEVER return 5xx, since one dead
+  // provider (or a total probe failure) must not take down the observability
+  // surface itself (T-18-03). The probe query is the fixed internal
+  // HEALTH_PROBE_QUERY owned by the service — never a client-supplied `q`
+  // (T-18-01).
+  fastify.get('/api/health/providers', async (request, reply) => {
+    try {
+      await ensureReady()
+      return await healthProbe.probeAll(gateway.getProviderIds())
+    } catch (err) {
+      // Structural error line only — never the probe query or an adapter
+      // payload (T-18-01).
+      fastify.log.error(`[health] probeAll failed: ${err instanceof Error ? err.message : String(err)}`)
+      reply.code(200)
+      return {}
+    }
   })
 
   // Live provider GeoJSON layer proxy (e.g. terremotovenezuela damaged

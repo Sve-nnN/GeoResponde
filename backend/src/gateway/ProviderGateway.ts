@@ -202,6 +202,16 @@ export class ProviderGateway {
   }
 
   /**
+   * Ids of currently registered/active adapters (Phase 18 / HEALTH-12). This
+   * is the correct fan-out source for the health probe — unlike
+   * `getProviders()`, which returns the full catalog including inactive
+   * providers with no adapter to probe.
+   */
+  getProviderIds(): string[] {
+    return [...this.adapters.keys()];
+  }
+
+  /**
    * Diagnostic helper for the `/api/dev/inspect/:id` developer endpoint.
    * Runs a single provider's adapter in isolation and reports what came back,
    * so contributors can verify a new integration without booting the whole UI.
