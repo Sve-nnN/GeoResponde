@@ -104,6 +104,12 @@
   border-radius: var(--radius-full);
 }
 
+/* Default Desktop Nav (hidden below the mobile breakpoint further down) */
+.desktop-nav {
+  display: flex;
+  align-items: center;
+}
+
 /* Default Hide Mobile Elements */
 .mobile-sidebar-toggle {
   display: none;

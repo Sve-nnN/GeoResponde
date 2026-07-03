@@ -48,7 +48,7 @@ export function TopNav() {
         </div>
         
         {/* Desktop Links */}
-        <div className="desktop-nav" style={{ display: 'flex', alignItems: 'center' }}>
+        <div className="desktop-nav" style={{ alignItems: 'center' }}>
           <NavLink to="/situation" style={linkStyle}>
             {t('nav.situation')}
             <span style={badgeStyle('#3b82f6')}>Beta</span>
@@ -68,7 +68,7 @@ export function TopNav() {
       </div>
       
       {/* Desktop Language Selector */}
-      <div className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#cbd5e1', fontWeight: 'bold' }}>
+      <div className="desktop-nav" style={{ alignItems: 'center', gap: '8px', color: '#cbd5e1', fontWeight: 'bold' }}>
         <span 
           onClick={() => i18n.changeLanguage('es')}
           style={{ cursor: 'pointer', color: i18n.language.startsWith('es') ? '#38bdf8' : '#cbd5e1' }}
@@ -81,7 +81,7 @@ export function TopNav() {
       </div>
 
       {/* Mobile Hamburger Toggle */}
-      <div className="mobile-nav-toggle" style={{ display: 'flex', alignItems: 'center' }}>
+      <div className="mobile-nav-toggle" style={{ alignItems: 'center' }}>
         <button 
           onClick={() => setMenuOpen(!menuOpen)}
           style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer' }}
