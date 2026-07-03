@@ -236,6 +236,8 @@ Backend
 http://localhost:3001
 ```
 
+For pointing the frontend at your local gateway with `VITE_API_URL` and avoiding CORS errors during development, see [Local Development and CORS](docs/local-development.md).
+
 ---
 
 # Roadmap

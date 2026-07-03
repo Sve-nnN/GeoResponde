@@ -1,6 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify'
 import cors from '@fastify/cors'
 import { pathToFileURL } from 'url'
+import { resolveCorsOrigin } from './config/cors.js'
 import { REPORT_TOPICS, validateReport, type Report, type SubmissionReport, type ReportFieldError } from '@georesponde/shared'
 import { ProviderGateway } from './gateway/ProviderGateway.js'
 import { VenezuelaTeBuscaAdapter } from './adapters/venezuelatebusca/adapter.js'
@@ -62,7 +63,7 @@ function parseDryRun(query: unknown): boolean {
 
 export function buildApp(): FastifyInstance {
   const fastify = Fastify({ logger: true })
-  fastify.register(cors, { origin: true })
+  fastify.register(cors, { origin: resolveCorsOrigin() })
 
   const gateway = new ProviderGateway()
   // Route audit-lite submission lines through Fastify's pino logger.
