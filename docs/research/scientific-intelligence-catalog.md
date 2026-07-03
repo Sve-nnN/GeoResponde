@@ -36,3 +36,43 @@ A number of other entries in `sources.json` (shelters, road closures, damage ass
 ## What is genuinely unknown
 
 License is unknown for FUNVISIS, USGS Data Series 199, Copernicus EMS, and NASA EarthData because `sources.json` does not carry a `license` field for those entries and no license statement was found in the adapter code or comments. No numeric refresh cadence (in minutes or hours) was found for anything beyond the "Hourly" value on the USGS layer; every other Scientific layer is marked `Static` in the catalog itself, which is reported as-is rather than guessed at.
+
+## Candidate sources to integrate
+
+The sources below are not in the catalog yet. They come from maintainer input on issue #17 as good next additions, so they are documented here as research, not as things the code already uses. Because they are not part of the catalog graph, the coverage test (`packages/catalog/tests/scientific-inventory-coverage.test.ts`) does not assert them; it only guards sources that Scientific layers actually reference. Fields marked "to verify" still need a contributor to confirm them (see the template below).
+
+| Source | Category | API | License | Update frequency | Geometry | Coverage | Authentication |
+|--------|----------|-----|---------|------------------|----------|----------|----------------|
+| GEOFON (GFZ Potsdam) | Earthquakes | FDSN event web service, `https://geofon.gfz.de/fdsnws/event/1/query` (QuakeML and text output) | Open, attribution to GFZ (to verify exact terms) | Near real-time | Epicenter points | Global | None |
+| NASA FIRMS | Fire | Area API, `https://firms.modaps.eosdis.nasa.gov/api/area/csv/[MAP_KEY]/[SOURCE]/[BBOX]/[DAYS]` (CSV) | NASA open data | Near real-time (standard within ~60 min of overpass; ultra real-time under ~60 s for US and Canada) | Fire-detection points | Global | Free `MAP_KEY` (register on the FIRMS site) |
+| GloFAS (Copernicus CEMS) | Flood | Copernicus Early Warning Data Store via the `cdsapi` client (`.cdsapirc` key); also WMS-T for map tiles | Copernicus, free and open with attribution | Daily forecasts | Gridded raster plus reporting points | Global | Free CDS account and API key, plus one-time acceptance of each dataset's terms |
+| Copernicus EMS | Flood / Damage | Already integrated as `src-copernicus` (see the main table). Rapid Mapping activations per event | See main table | Per event | Polygon damage grading | Per-event (EMSR activations) | None |
+| HDX (Humanitarian Data Exchange) | Humanitarian | Already a federated provider (`prov-hdx`), CKAN `package_search` API. Better tracked under the humanitarian provider inventory (#16) | Per dataset (CKAN) | Per dataset | Varies (tabular and geospatial) | Global humanitarian | None (public CKAN) |
+| OCHA Geospatial (Impact Viewer) | Humanitarian | ArcGIS-based viewer, `https://chd-ds-geospatial-impact-viewer.azurewebsites.net/`; programmatic API to verify | OCHA open data (to verify) | Per event (to verify) | Polygon and point (to verify) | Global humanitarian | To verify (viewer appears public) |
+| AWS Open Data (STAC) | Satellite imagery | STAC catalogs over public S3 via the AWS Open Data Registry, `https://registry.opendata.aws/` | Per dataset (many CC-BY or public domain) | Per dataset | Raster assets described by STAC items | Global | None for open buckets (some are requester-pays) |
+
+Two of these are not really new: Copernicus EMS is already in the catalog (`src-copernicus`) and HDX is already a federated provider (`prov-hdx`), so for those this is a cross-reference rather than fresh integration work. Two lean humanitarian rather than scientific (HDX, OCHA Geospatial) and probably fit better alongside the humanitarian provider inventory (#16).
+
+## Contributor research template
+
+If you are helping research a new source and do not want to touch GitHub directly, fill one block per source with exactly these fields and hand it back. That maps one to one onto the table above, so it drops straight in.
+
+```
+Source name:
+Category:            (Earthquakes / Fire / Flood / Damage / Satellite imagery / Humanitarian / other)
+API:                 (the endpoint URL or the access method, e.g. "FDSN event web service at <url>", "STAC over S3", "cdsapi client")
+License:             (e.g. Public Domain, CC-BY-4.0, Copernicus, "unknown")
+Update frequency:    (e.g. real-time, hourly, daily, per event, static)
+Geometry:            (points / lines / polygons / raster)
+Coverage:            (global / Venezuela / per-event / a named region)
+Authentication:      (none / free API key / account required / "unknown")
+Notes:               (anything worth knowing: rate limits, per-event scoping, experimental status)
+```
+
+Field notes so everyone fills them the same way:
+
+- **API**: prefer the real machine-readable endpoint (a web service or data file), not just the human website. If the only access is a web page, say so.
+- **Authentication**: "none" means you can call it with no key. If a free key or account is needed, write that plus where to get it.
+- **Geometry**: what shape the data is. Point feeds (earthquakes, fires), vector polygons (damage grading), or raster tiles (satellite imagery, flood grids).
+- **Coverage**: global, a single country, or scoped to one disaster activation at a time.
+- If you are unsure of a field, write "unknown" rather than guessing. A verified "unknown" is more useful than a wrong value.
