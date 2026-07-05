@@ -295,5 +295,36 @@
                                      "li4":  "Enlaces directos a los proveedores",
                                      "li5":  "Evitar duplicaciones innecesarias"
                                  }
-              }
+              },
+    "dev":  {
+        "providerStatus": {
+            "badge": {
+                "healthy": "Operativo",
+                "degrading": "Degradado",
+                "down": "Caído",
+                "warming": "Calentando"
+            },
+            "sparkline": {
+                "aria": "Historial de tiempos de respuesta",
+                "empty": "sin historial aún"
+            },
+            "title": "Estado de Proveedores",
+            "refresh": "Actualizar",
+            "refreshing": "Actualizando...",
+            "colProvider": "Nombre del Proveedor",
+            "colAdapter": "ID del Adaptador",
+            "colBadge": "Estado",
+            "colAvailability": "Disponibilidad",
+            "colLatency": "Latencia Promedio",
+            "colLastSuccess": "Último Éxito",
+            "colFailures": "Fallas Consecutivas",
+            "colHistory": "Historial de Tiempos de Respuesta",
+            "latencyUnit": "ms",
+            "never": "Nunca",
+            "warmingUp": "Calentando",
+            "relativeNow": "justo ahora",
+            "statelessNote": "El historial de salud vive en la memoria del gateway y se reinicia en cada redespliegue; si el gateway corre en más de una instancia, las lecturas pueden variar entre ellas. Es una vista en memoria de mejor esfuerzo, no un registro duradero.",
+            "loading": "Cargando proveedores..."
+        }
+    }
 }
