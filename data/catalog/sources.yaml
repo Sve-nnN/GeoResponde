@@ -74,6 +74,12 @@
   url: https://pubs.usgs.gov/ds/2006/199/
   organizationId: org-usgs
 
+- id: src-esri-world-imagery
+  name: Esri World Imagery
+  url: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer
+  organizationId: org-esri
+  license: Esri Master License Agreement
+
 - id: src-vantor
   name: Vantor Open Data Program
   url: https://vantor-opendata.s3.amazonaws.com

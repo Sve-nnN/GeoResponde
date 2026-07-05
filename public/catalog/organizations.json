@@ -55,6 +55,12 @@
     "type": "PRIVATE"
   },
   {
+    "id": "org-esri",
+    "name": "Esri",
+    "type": "PRIVATE",
+    "website": "https://www.esri.com"
+  },
+  {
     "id": "org-vantor",
     "name": "Vantor Open Data Program",
     "website": "https://vantor.com",

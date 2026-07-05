@@ -102,7 +102,7 @@
 - id: ds-satellite-before
   title: Esri World Imagery (Pre-Event Base)
   description: "High-resolution global satellite basemap (Esri). Acquisition Date: May 1, 2026."
-  sourceId: src-usgs-ds-199
+  sourceId: src-esri-world-imagery
   tags:
     - satellite
     - optical
