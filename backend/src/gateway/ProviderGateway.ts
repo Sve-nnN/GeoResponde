@@ -13,6 +13,7 @@ import { BaseAdapter, isSubmissionCapable } from '../adapters/BaseAdapter.js';
 import { createAdapter } from '../adapters/registry.js';
 import { isCedula, normalizeCedula } from '../adapters/person.js';
 import { dedupePersons } from './dedupe.js';
+import { rankResults } from './ranking.js';
 import { newReportKey, deriveKey, hashKey } from './idempotency.js';
 
 // ESM has no __dirname. Derive it from this module's URL so the catalog path
@@ -91,12 +92,13 @@ export class ProviderGateway {
       const matches = results.filter(
         (r) => r.person?.cedula && normalizeCedula(r.person.cedula) === target,
       );
-      return dedupePersons(matches);
+      return rankResults(dedupePersons(matches), query);
     }
 
     // Many of these providers aggregate one another, so the same person is
-    // reported by several. Collapse those into one result with provenance.
-    return dedupePersons(results);
+    // reported by several. Collapse those into one result with provenance, then
+    // order by relevance so the best-matched, best-corroborated results lead.
+    return rankResults(dedupePersons(results), query);
   }
 
   /**
