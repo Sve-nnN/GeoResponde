@@ -101,6 +101,21 @@ export function buildApp(): FastifyInstance {
     return gateway.getProviders()
   })
 
+  // Per-topic submission capabilities (#42): which providers can receive each
+  // report topic. The Report form reads this to tell the user what is actually
+  // available and to avoid implying a report is sent when no provider covers the
+  // selected topic. Degrade-safe: never 5xx (an empty map just means "unknown").
+  fastify.get('/api/report/capabilities', async (_request, reply) => {
+    try {
+      await ensureReady()
+      return gateway.getSubmissionCapabilities()
+    } catch (err) {
+      fastify.log.error(`[report] capabilities failed: ${err instanceof Error ? err.message : String(err)}`)
+      reply.code(200)
+      return {}
+    }
+  })
+
   // Live provider GeoJSON layer proxy (e.g. terremotovenezuela damaged
   // buildings). Resolves the adapter by catalog id and returns its normalized
   // FeatureCollection with the provider's attribution header. Degrade-safe: an

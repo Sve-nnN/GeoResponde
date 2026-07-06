@@ -39,6 +39,21 @@ sent.
 | Ushahidi | `prov-ushahidi` | `UshahidiAdapter` | No | Yes | `api` | missing-person, resource-need, shelter-status | Dry-run default. Live requires `GEORESPONDE_SUBMIT_LIVE=1` **and** `USHAHIDI_DEPLOYMENT_URL` **and** `USHAHIDI_TOKEN` (plus `USHAHIDI_FORM_ID` for the target form). |
 | Terremoto Venezuela | `prov-terremotovenezuela` | `TerremotoVenezuelaAdapter` | Yes | Yes | `api` | building-damage | Dry-run default. Live requires `GEORESPONDE_SUBMIT_LIVE=1`; posts to the fixed endpoint `https://api.terremotovenezuela.com/api/v1/reportes`. |
 
+### Verification status
+
+Current state of each routable submission target (issue #42). "Dry-run verified"
+means the routing, mapping, and dry-run preview are exercised by tests; a real
+live send additionally needs the provider's credentials and `GEORESPONDE_SUBMIT_LIVE=1`,
+which is an operational step outside this repo. Provider-specific problems are
+tracked in their own issues.
+
+| Provider | Status | Notes |
+| --- | --- | --- |
+| Venezuela Reporta | Dry-run verified; live pending credentials | Mapper and router covered by tests; live send needs `VENEZUELAREPORTA_API_KEY`. |
+| Desaparecidos Terremoto VE | Verified (deep-link handoff) | No server-side send by design; the user completes the report on the provider's domain. |
+| Ushahidi | Dry-run verified; live pending credentials | Live send needs `USHAHIDI_DEPLOYMENT_URL`, `USHAHIDI_TOKEN`, and `USHAHIDI_FORM_ID`. |
+| Terremoto Venezuela | Pending verification | The upstream report endpoint changed on the provider's side and earlier attempts returned an error; the API path must be re-tested before it can be trusted for live sends. Tracked separately. |
+
 ### Advertised-but-not-routable
 
 The following providers list `submission` among their catalog capabilities but do

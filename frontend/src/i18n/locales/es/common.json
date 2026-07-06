@@ -136,6 +136,13 @@
                  "serviceUnavailable":  "El servicio de búsqueda no está disponible temporalmente. Inténtalo nuevamente en unos minutos."
              },
     "report":  {
+                   "underDevelopment": "El reporte federado está en desarrollo activo. Si un reporte llega a un proveedor, y cómo lo hace, depende de las capacidades de ese proveedor.",
+                   "availability": {
+                       "deliveredTo": "Este tipo de reporte se puede enviar a:",
+                       "none": "Ningún proveedor acepta este tipo de reporte por ahora, así que todavía no se puede entregar. Tu reporte no será enviado.",
+                       "modeApi": "envío en vivo",
+                       "modeDeepLink": "redirección al proveedor"
+                   },
                    "title":  "Reportar InformaciÃ³n",
                    "subtitle":  "Componga un reporte estructurado y GeoResponde lo reenvÃ­a a las organizaciones confiables correspondientes.",
                    "topics":  {

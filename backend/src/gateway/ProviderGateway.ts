@@ -13,6 +13,7 @@ import { BaseAdapter, isSubmissionCapable } from '../adapters/BaseAdapter.js';
 import { createAdapter } from '../adapters/registry.js';
 import { isCedula, normalizeCedula } from '../adapters/person.js';
 import { dedupePersons } from './dedupe.js';
+import { submissionCapabilities, type CapabilitiesByTopic } from './capabilities.js';
 import { rankResults } from './ranking.js';
 import { newReportKey, deriveKey, hashKey } from './idempotency.js';
 
@@ -170,6 +171,14 @@ export class ProviderGateway {
       summary,
       elapsedMs,
     };
+  }
+
+  /**
+   * Per-topic submission capabilities (#42): which providers can receive each
+   * report topic, so the frontend can tell the user what is actually available.
+   */
+  getSubmissionCapabilities(): CapabilitiesByTopic {
+    return submissionCapabilities([...this.adapters.values()]);
   }
 
   getProviders() {
