@@ -66,6 +66,12 @@
     "description": "PRIVATE"
   },
   {
+    "id": "org-esri",
+    "title": "Esri",
+    "type": "organization",
+    "description": "PRIVATE"
+  },
+  {
     "id": "org-vantor",
     "title": "Vantor Open Data Program",
     "type": "organization",
@@ -196,6 +202,11 @@
   {
     "id": "src-usgs-ds-199",
     "title": "USGS Data Series 199 (Geologic Map of Northern Venezuela)",
+    "type": "source"
+  },
+  {
+    "id": "src-esri-world-imagery",
+    "title": "Esri World Imagery",
     "type": "source"
   },
   {

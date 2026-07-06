@@ -56,6 +56,12 @@
       "type": "PRIVATE"
     },
     {
+      "id": "org-esri",
+      "name": "Esri",
+      "type": "PRIVATE",
+      "website": "https://www.esri.com"
+    },
+    {
       "id": "org-vantor",
       "name": "Vantor Open Data Program",
       "website": "https://vantor.com",
@@ -208,6 +214,13 @@
       "name": "USGS Data Series 199 (Geologic Map of Northern Venezuela)",
       "url": "https://pubs.usgs.gov/ds/2006/199/",
       "organizationId": "org-usgs"
+    },
+    {
+      "id": "src-esri-world-imagery",
+      "name": "Esri World Imagery",
+      "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",
+      "organizationId": "org-esri",
+      "license": "Esri Master License Agreement"
     },
     {
       "id": "src-vantor",
@@ -377,7 +390,7 @@
       "id": "ds-satellite-before",
       "title": "Esri World Imagery (Pre-Event Base)",
       "description": "High-resolution global satellite basemap (Esri). Acquisition Date: May 1, 2026.",
-      "sourceId": "src-usgs-ds-199",
+      "sourceId": "src-esri-world-imagery",
       "tags": [
         "satellite",
         "optical",
