@@ -130,6 +130,16 @@ export function buildApp(): FastifyInstance {
       // Structural error line only — never the probe query or an adapter
       // payload (T-18-01).
       fastify.log.error(`[health] probeAll failed: ${err instanceof Error ? err.message : String(err)}`)
+  // Per-topic submission capabilities (#42): which providers can receive each
+  // report topic. The Report form reads this to tell the user what is actually
+  // available and to avoid implying a report is sent when no provider covers the
+  // selected topic. Degrade-safe: never 5xx (an empty map just means "unknown").
+  fastify.get('/api/report/capabilities', async (_request, reply) => {
+    try {
+      await ensureReady()
+      return gateway.getSubmissionCapabilities()
+    } catch (err) {
+      fastify.log.error(`[report] capabilities failed: ${err instanceof Error ? err.message : String(err)}`)
       reply.code(200)
       return {}
     }

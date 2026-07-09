@@ -136,6 +136,13 @@
                  "serviceUnavailable":  "The search service is temporarily unavailable. Please try again in a few moments."
              },
     "report":  {
+                   "underDevelopment": "Federated reporting is under active development. Whether and how a report reaches a provider depends on that provider's capabilities.",
+                   "availability": {
+                       "deliveredTo": "This report type can be sent to:",
+                       "none": "No provider currently accepts this report type, so it cannot be delivered yet. Your report will not be sent.",
+                       "modeApi": "live submission",
+                       "modeDeepLink": "provider handoff"
+                   },
                    "title":  "Report Information",
                    "subtitle":  "Compose a structured report and GeoResponde forwards it to the right trusted organizations.",
                    "topics":  {

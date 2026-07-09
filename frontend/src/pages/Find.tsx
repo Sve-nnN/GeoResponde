@@ -3,6 +3,7 @@ import type { NormalizedSearchResult, PersonStatus, Gender } from '@georesponde/
 import { useTranslation } from 'react-i18next';
 import { FindMap } from '../components/Map/FindMap';
 import { API_BASE } from '../lib/api';
+import { shouldShowNoResults } from '../lib/searchState';
 
 const STATUS_META: Record<PersonStatus, { label: string; color: string }> = {
   missing: { label: 'Desaparecido', color: '#ef4444' },
@@ -59,6 +60,7 @@ export function Find() {
   const [results, setResults] = useState<NormalizedSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
   const [view, setView] = useState<'list' | 'map'>('list');
   const { t } = useTranslation();
 
@@ -68,11 +70,15 @@ export function Find() {
 
     setLoading(true);
     setHasSearched(true);
+    setSearchFailed(false);
     try {
       const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
-      
+
       if (!res.ok) {
         console.error(`Search request failed: ${res.status} ${res.statusText}`);
+        // Treat a non-OK response as a failed search, not a zero-result one.
+        // Existing results (if any) stay visible; the empty state is suppressed.
+        setSearchFailed(true);
         alert(t("find.serviceUnavailable"));
         return;
       }
@@ -81,6 +87,7 @@ export function Find() {
       setResults(data);
     } catch (err) {
       console.error(err);
+      setSearchFailed(true);
       alert(t('find.error'));
     } finally {
       setLoading(false);
@@ -258,7 +265,7 @@ export function Find() {
             </div>
           </div>
         ))}
-        {!loading && results.length === 0 && hasSearched && (
+        {shouldShowNoResults({ loading, hasSearched, searchFailed, resultCount: results.length }) && (
           <div style={{ color: '#94a3b8', textAlign: 'center', marginTop: '40px', fontSize: '18px' }}>
             {t('find.noResults', { query })}
           </div>

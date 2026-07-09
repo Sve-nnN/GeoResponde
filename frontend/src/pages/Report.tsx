@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { validateReport, type Report as ReportModel, type ReportTopic, type SubmissionResult } from '@georesponde/shared';
 import { useTranslation } from 'react-i18next';
 import { TopicSelector } from '../components/report/TopicSelector';
@@ -6,6 +6,12 @@ import { ReportFields } from '../components/report/ReportFields';
 import { ConsentGate } from '../components/report/ConsentGate';
 import { ResultPreview } from '../components/report/ResultPreview';
 import { submitReport } from '../lib/report';
+import { API_BASE } from '../lib/api';
+import {
+  providersForTopic,
+  isTopicDeliverable,
+  type CapabilitiesByTopic,
+} from '../lib/reportCapabilities';
 
 export function Report() {
   const { t } = useTranslation();
@@ -15,8 +21,22 @@ export function Report() {
   const [acknowledgedAt, setAcknowledgedAt] = useState<string | null>(null);
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [capabilities, setCapabilities] = useState<CapabilitiesByTopic | null>(null);
+
+  useEffect(() => {
+    // Non-blocking: if this fails, capabilities stays null and the form still
+    // works (the availability hint just does not render). Never surfaces an error.
+    fetch(`${API_BASE}/api/report/capabilities`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setCapabilities(data))
+      .catch(() => setCapabilities(null));
+  }, []);
 
   const validation = topic ? validateReport(topic, fields) : { ok: false, errors: {} };
+  const topicProviders = providersForTopic(capabilities, topic);
+  // Only gate on availability once we actually know it. While capabilities are
+  // still loading (null), do not block the user.
+  const deliverable = capabilities === null || isTopicDeliverable(capabilities, topic);
 
   const handleTopicChange = (next: ReportTopic) => {
     setTopic(next);
@@ -41,7 +61,8 @@ export function Report() {
     });
   };
 
-  const canSubmit = topic !== null && acknowledgedAt !== null && validation.ok && !submitting;
+  const canSubmit =
+    topic !== null && acknowledgedAt !== null && validation.ok && deliverable && !submitting;
 
   const handleSubmit = async () => {
     if (topic === null || acknowledgedAt === null || !validation.ok) return;
@@ -101,10 +122,63 @@ export function Report() {
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         }}
       >
+        <p
+          style={{
+            fontSize: '13px',
+            color: '#94a3b8',
+            margin: '0 0 20px 0',
+            paddingBottom: '16px',
+            borderBottom: '1px solid #334155',
+          }}
+        >
+          {t('report.underDevelopment')}
+        </p>
+
         <TopicSelector value={topic} onChange={handleTopicChange} />
 
         {topic && (
           <>
+            {capabilities !== null &&
+              (topicProviders.length > 0 ? (
+                <div
+                  style={{
+                    fontSize: '13px',
+                    color: '#94a3b8',
+                    backgroundColor: '#0f172a',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    margin: '16px 0',
+                  }}
+                >
+                  {t('report.availability.deliveredTo')}{' '}
+                  {topicProviders.map((p, i) => (
+                    <span key={p.id}>
+                      {i > 0 ? ', ' : ''}
+                      <strong style={{ color: '#cbd5e1' }}>{p.name}</strong>
+                      {' ('}
+                      {p.mode === 'deep_link'
+                        ? t('report.availability.modeDeepLink')
+                        : t('report.availability.modeApi')}
+                      {')'}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  style={{
+                    fontSize: '13px',
+                    color: '#fca5a5',
+                    backgroundColor: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    margin: '16px 0',
+                  }}
+                >
+                  {t('report.availability.none')}
+                </div>
+              ))}
             <ReportFields
               topic={topic}
               values={fields}
