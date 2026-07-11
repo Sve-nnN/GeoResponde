@@ -76,6 +76,10 @@ export class ProviderGateway {
     const searchPromises: Promise<NormalizedSearchResult[]>[] = [];
     
     for (const [id, adapter] of this.adapters.entries()) {
+      // `reference` providers (e.g. example-reference) stay registered so
+      // /api/dev/inspect/:id and the health probe can reach them, but they are
+      // not real data sources and must never appear in a user-facing search.
+      if (adapter.provider.status === 'reference') continue;
       if (adapter.provider.capabilities.includes('search')) {
         searchPromises.push(
           adapter.search(query, domain).catch(e => {
