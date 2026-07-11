@@ -1,0 +1,30 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-66.927982349, 10.449402696] },
+      "properties": {
+        "id": "syn-hosp-001",
+        "parroquia_id": "syn-parroquia-001",
+        "nombre": "AMBULATORIO SINTETICO",
+        "tipo": "ASISTENCIAL",
+        "subtipo": "AMBULATORIOS Y/O DISPENSARIOS",
+        "direccion": null,
+        "telefono": null,
+        "sector": "SECTOR SINTETICO",
+        "estatus": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": ["bad", "coords"] },
+      "properties": { "id": "syn-hosp-bad", "nombre": "Invalid coords" }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Polygon", "coordinates": [[[0, 0]]] },
+      "properties": { "id": "syn-hosp-polygon", "nombre": "Wrong geometry type" }
+    }
+  ]
+}

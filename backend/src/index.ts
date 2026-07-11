@@ -13,6 +13,7 @@ import { fetchUsgsEarthquakes } from './adapters/usgs/service.js'
 import { fetchFunvisisEarthquakes } from './adapters/funvisis/service.js'
 import { fetchCopernicusProduct } from './adapters/damage/service.js'
 import { fetchNasaDpm, warmNasaDpm } from './adapters/damage/nasa.js'
+import { fetchNegentropyLayer, isNegentropyDataset } from './adapters/negentropy/service.js'
 
 /**
  * Cache-Control for the damage read routes so the deployed gateway's CDN/edge
@@ -228,6 +229,28 @@ export function buildApp(): FastifyInstance {
     const result = await fetchFunvisisEarthquakes({ start })
     reply.header('X-FUNVISIS-Source', result.source)
     reply.header('X-Attribution', 'FUNVISIS (vía SismosVE)')
+    return result.collection
+  })
+
+  // Negentropy scientific provider (issue #83): hospitales, planteles, and
+  // edificaciones (human-verified building damage) as GeoJSON layers. Scoped
+  // to only these three datasets — see negentropy/parser.ts for why the rest
+  // of Negentropy's endpoints are excluded (duplicate NASA/Copernicus
+  // products already federated natively). `:dataset` is validated against
+  // the fixed allowlist; an unknown dataset yields an empty collection
+  // rather than forwarding an arbitrary path upstream. Attribution
+  // "Negentropy Technologies" is REQUIRED and carried on every feature +
+  // this header. Degrades gracefully (X-Negentropy-Source), never 5xx.
+  fastify.get('/api/negentropy/:dataset', async (request, reply) => {
+    const { dataset } = request.params as { dataset: string }
+    const { bbox } = request.query as { bbox?: string }
+    if (!isNegentropyDataset(dataset)) {
+      reply.header('X-Negentropy-Source', 'empty')
+      return { type: 'FeatureCollection', features: [] }
+    }
+    const result = await fetchNegentropyLayer(dataset, { bbox })
+    reply.header('X-Negentropy-Source', result.source)
+    reply.header('X-Attribution', 'Negentropy Technologies')
     return result.collection
   })
 

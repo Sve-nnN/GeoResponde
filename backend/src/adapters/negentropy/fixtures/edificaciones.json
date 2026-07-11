@@ -1,0 +1,20 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-66.8201092, 10.5849543] },
+      "properties": {
+        "id": "syn-edif-001",
+        "parroquia_id": "syn-parroquia-001",
+        "nombre": "Edificio Sintetico",
+        "direccion": "Calle Sintetica, 123",
+        "ciudad": "Ciudad Sintetica",
+        "zona": "Zona Sintetica",
+        "nivel_dano": "total",
+        "estatus": "verificado",
+        "notas": "Nota sintetica de prueba"
+      }
+    }
+  ]
+}
