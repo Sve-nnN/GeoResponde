@@ -10,6 +10,10 @@ frontend hardcoded `http://127.0.0.1:3001`, so **Find only worked locally**.
 That is now an environment variable, so the public demo can point at a deployed
 gateway.
 
+Setting up a local copy of the gateway and frontend instead of deploying? See
+[Local Development](./local-development.md) — it covers running both
+together, `VITE_API_URL`, and CORS in dev.
+
 ## 1. Deploy the Provider Gateway
 
 The gateway is serverless-ready: `backend/src/index.ts` exports `buildApp()` and
@@ -22,8 +26,18 @@ Vercel Node function that wraps the app.
 - Vercel serves `backend/api/index.ts` at `/api/*`.
 - No environment variables are required to start; providers initialize on first request.
 
-**Any Node host (Render, Fly, Railway, a VM):**
-- `pnpm --filter @georesponde/backend build && node backend/dist/index.js`
+**Railway:**
+- Create a service from this repo, **root directory** `backend/`.
+- Build command: `pnpm --filter @georesponde/backend build`.
+- Start command: `node backend/dist/index.js`.
+- Railway assigns `PORT` automatically — the gateway honors it (defaults to
+  `3001` if unset, which only matters when running the same command outside
+  Railway). No environment variables are required to start; providers
+  initialize on first request, same as on Vercel.
+- Health check path: `GET /api/health`.
+
+**Any other Node host (Render, Fly, a VM):**
+- Same build/start commands as Railway above.
 - Honors `PORT` (defaults to `3001`). Health check: `GET /api/health`.
 
 Note: some provider adapters embed public (publishable) Supabase keys that the
@@ -66,3 +80,40 @@ If your Vercel deployment configuration is missing the settings above, you may o
 
 The gateway currently reflects any origin (`origin: true`). For a locked-down
 production deployment, restrict it to the frontend's domain in `buildApp()`.
+
+## CI
+
+Every push and pull request against `main` runs `.github/workflows/ci.yml`
+(GitHub Actions), in order:
+
+1. `pnpm install`
+2. `pnpm run build` — builds every workspace package.
+3. `pnpm run typecheck` — `tsc --noEmit` across the workspace.
+4. `pnpm run lint` — ESLint.
+5. `pnpm run test` — Vitest across `backend/`, `frontend/`, and the shared packages.
+6. `pnpm run catalog:validate` — validates `public/catalog/*.json` against the catalog schema.
+7. `node scripts/check-i18n-parity.mjs` — fails if the `en`/`es` translation bundles drift out of sync.
+
+All seven steps must pass before a PR can merge — this is the actual quality
+gate, not a suggestion. Run the same commands locally before opening a PR to
+catch failures early.
+
+## Release process
+
+Releases follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html), tracked in
+[`CHANGELOG.md`](../CHANGELOG.md) at the repo root. There is no automated
+release pipeline yet — cutting a release is a manual, repo-maintainer step:
+
+1. Move the accumulated `## Unreleased` changes (or a fresh summary of what
+   merged since the last entry) under a new `## vX.Y.Z` heading in
+   `CHANGELOG.md`, with a release date.
+2. Categorize changes under `Added` / `Changed` / `Fixed` / etc., per Keep a
+   Changelog's format.
+3. Commit `CHANGELOG.md` on `main` and tag the commit: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+4. Redeploy the gateway and frontend (see sections 1-2 above) if the release
+   includes changes to either.
+
+Version numbers follow SemVer relative to the project's current pre-1.0 stage
+(breaking changes bump the minor, everything else patches) until the project
+reaches `v1.0.0`.
