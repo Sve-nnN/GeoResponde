@@ -34,3 +34,37 @@ export async function fetchJson<T = unknown>(
     clearTimeout(timeout);
   }
 }
+
+/**
+ * Generic REST/text transport. Same shape as {@link fetchJson} but returns the
+ * raw response body instead of JSON-parsing it — for CSV/plain-text upstreams
+ * (e.g. the funvisis-catalog CSV). Reusable by any adapter with a text-based
+ * source instead of a one-off `fetch()` call in the adapter.
+ */
+export async function fetchText(
+  url: string,
+  options: { timeoutMs?: number; headers?: Record<string, string> } = {},
+): Promise<string> {
+  const { timeoutMs = 8000, headers = {} } = options;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'GeoResponde-Gateway/1.0',
+        ...headers,
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`REST transport responded with status: ${res.status}`);
+    }
+
+    return (await res.text()).replace(/^﻿/, '');
+  } finally {
+    clearTimeout(timeout);
+  }
+}

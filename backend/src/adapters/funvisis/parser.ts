@@ -4,44 +4,28 @@ import type {
 } from '@georesponde/shared';
 
 /**
- * Raw SismosVE `/api/sismos` shapes — only the fields we consume are typed, and
- * everything is optional/defensive because SismosVE is an untrusted third-party
- * source: a malformed response must never crash the gateway. SismosVE federates
- * official FUNVISIS data as a GeoJSON-style feed.
+ * Attribution REQUIRED on FUNVISIS data federated through the funvisis-catalog
+ * CSV (issue #76). The catalog blends two source regimes — ISC Bulletin
+ * (agency `FUNV`, ~2003-2025-03) and OCR'd official FUNVISIS bulletin images
+ * (author `FUNVISIS`, 2025-03-present) — both FUNVISIS-origin, one label.
  */
-export interface SismosVeRawFeature {
-  id?: string | number;
-  geometry?: {
-    type?: string;
-    /** Point coordinates: [lng, lat]. */
-    coordinates?: unknown;
-  } | null;
-  properties?: {
-    /** Magnitude — SismosVE sends it as a numeric string, e.g. "2.0". */
-    value?: number | string | null;
-    /** Depth — SismosVE sends it as a string with unit, e.g. "4.0 km". */
-    depth?: number | string | null;
-    /** Human place description. */
-    addressFormatted?: string | null;
-    /** Local date — SismosVE uses DD-MM-YYYY, e.g. "01-07-2026". */
-    date?: string | null;
-    /** Local time, e.g. "13:39" or "14:32:10". */
-    time?: string | null;
-    country?: string | null;
-    url?: string | null;
-  } | null;
-}
+export const FUNVISIS_ATTRIBUTION = 'FUNVISIS (via funvisis-catalog/ISC)';
 
-export interface SismosVeResponse {
-  type?: string;
-  /** GeoJSON-style feed. */
-  features?: SismosVeRawFeature[];
-  /** Some SismosVE shapes nest under `sismos` instead of `features`. */
-  sismos?: SismosVeRawFeature[];
-}
+/** The funvisis-catalog CSV's fixed column order. */
+const CSV_COLUMNS = [
+  'id',
+  'time',
+  'latitude',
+  'longitude',
+  'depth_km',
+  'magnitude',
+  'mag_type',
+  'place',
+  'author',
+  'event_type',
+] as const;
 
-/** Attribution label REQUIRED on FUNVISIS data federated through SismosVE. */
-export const FUNVISIS_ATTRIBUTION = 'FUNVISIS (vía SismosVE)';
+type CsvRow = Record<(typeof CSV_COLUMNS)[number], string>;
 
 /** True when a value is a finite number within valid lat/lng bounds. */
 function inRange(lng: number, lat: number): boolean {
@@ -56,124 +40,94 @@ function inRange(lng: number, lat: number): boolean {
 }
 
 /** Non-empty trimmed string, or undefined. */
-function str(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim().length > 0
-    ? value.trim()
-    : undefined;
+function str(value: string | undefined): string | undefined {
+  return value !== undefined && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function toNum(value: string | undefined): number | null {
+  if (value === undefined) return null;
+  const n = parseFloat(value.trim());
+  return Number.isFinite(n) ? n : null;
 }
 
 /**
- * Coerce a numeric field that may arrive as a number or a string (optionally
- * with a unit, e.g. "4.0 km" or "2.0"), returning the leading finite number or
- * null. Defensive against garbage.
+ * Split the funvisis-catalog CSV into rows. The upstream is a well-formed,
+ * machine-generated CSV (no embedded newlines in fields), so a plain
+ * line-split is sufficient — this is not a general-purpose CSV parser. A
+ * handful of `place` values contain a literal comma; rows with more than the
+ * expected column count are defensively dropped rather than guessed at, per
+ * FUNVISIS-03 (malformed rows never crash the service or corrupt a mapping).
  */
-function toNum(value: unknown): number | null {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  if (typeof value === 'string') {
-    const n = parseFloat(value.trim());
-    return Number.isFinite(n) ? n : null;
+function parseRows(csv: string): CsvRow[] {
+  const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return [];
+
+  const header = lines[0].split(',').map((h) => h.trim());
+  const idxByCol = new Map(CSV_COLUMNS.map((c) => [c, header.indexOf(c)]));
+  if ([...idxByCol.values()].some((i) => i === -1)) return []; // unexpected schema
+
+  const rows: CsvRow[] = [];
+  for (const line of lines.slice(1)) {
+    const cells = line.split(',');
+    if (cells.length !== header.length) continue; // malformed row — drop, never guess
+    const row = {} as CsvRow;
+    for (const col of CSV_COLUMNS) {
+      row[col] = cells[idxByCol.get(col)!] ?? '';
+    }
+    rows.push(row);
   }
-  return null;
+  return rows;
 }
 
 /**
- * Normalize a SismosVE date to `YYYY-MM-DD`. SismosVE uses `DD-MM-YYYY`
- * (e.g. "01-07-2026"); an already-ISO `YYYY-MM-DD` is passed through. Returns
- * undefined when the shape is unrecognized.
+ * Normalize one CSV row into a GeoJSON Point Feature, or undefined when it's
+ * unusable (missing/out-of-range coordinates). Pure and defensive — never
+ * throws. `time` is already ISO-8601 UTC in this source, unlike SismosVE's
+ * local-time strings, so no timezone handling is needed here.
  */
-function normalizeDate(date: string): string | undefined {
-  const parts = date.split('-');
-  if (parts.length !== 3) return undefined;
-  const [a, b, c] = parts;
-  if (a.length === 4) return `${a}-${b}-${c}`; // already YYYY-MM-DD
-  if (c.length === 4) return `${c}-${b}-${a}`; // DD-MM-YYYY -> YYYY-MM-DD
-  return undefined;
-}
+function toFeature(row: CsvRow): EarthquakeFeature | undefined {
+  const lng = toNum(row.longitude);
+  const lat = toNum(row.latitude);
+  if (lng === null || lat === null || !inRange(lng, lat)) return undefined;
 
-/** Venezuela local time is UTC-4 year-round (no DST). */
-const VE_UTC_OFFSET = '-04:00';
-
-/** Pad a "HH:MM" time to "HH:MM:SS"; pass through "HH:MM:SS" and anything else. */
-function normalizeTime(t: string): string {
-  return /^\d{1,2}:\d{2}$/.test(t) ? `${t}:00` : t;
-}
-
-/**
- * Combine SismosVE `date` + `time` into an epoch (ms), or null when unparseable.
- * Handles SismosVE's DD-MM-YYYY date and HH:MM(:SS) time. SismosVE reports
- * Venezuela LOCAL time, so the zone is pinned explicitly to UTC-4 — the result
- * is independent of the host `TZ` (a server in UTC and one in America/Caracas
- * now agree on the same instant).
- */
-function toEpoch(date?: string | null, time?: string | null): number | null {
-  const raw = str(date);
-  if (!raw) return null;
-  const iso = normalizeDate(raw);
-  if (!iso) return null;
-  const t = str(time);
-  const candidates = t
-    ? [
-        `${iso}T${normalizeTime(t)}${VE_UTC_OFFSET}`,
-        `${iso}T${t}${VE_UTC_OFFSET}`,
-        `${iso}T00:00:00${VE_UTC_OFFSET}`,
-      ]
-    : [`${iso}T00:00:00${VE_UTC_OFFSET}`];
-  for (const candidate of candidates) {
-    const epoch = Date.parse(candidate);
-    if (Number.isFinite(epoch)) return epoch;
-  }
-  return null;
-}
-
-/**
- * Normalize one raw SismosVE feature into a GeoJSON Point Feature, or undefined
- * when it is unusable (missing/out-of-range coordinates). Pure and defensive —
- * never throws. Only `http(s)` urls survive (blocks `javascript:` and friends).
- */
-function toFeature(raw: SismosVeRawFeature): EarthquakeFeature | undefined {
-  const coords = raw.geometry?.coordinates;
-  if (!Array.isArray(coords)) return undefined;
-
-  const lng = typeof coords[0] === 'number' ? coords[0] : NaN;
-  const lat = typeof coords[1] === 'number' ? coords[1] : NaN;
-  if (!inRange(lng, lat)) return undefined;
-
-  const p = raw.properties ?? {};
-  const depth = toNum(p.depth);
-  const url = str(p.url);
-  const safeUrl = url && /^https?:\/\//i.test(url) ? url : undefined;
+  const timeStr = str(row.time);
+  const epoch = timeStr ? Date.parse(timeStr) : NaN;
+  const depth = toNum(row.depth_km);
 
   return {
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [lng, lat] },
     properties: {
-      id: raw.id != null ? String(raw.id) : '',
-      mag: toNum(p.value),
-      place: str(p.addressFormatted) ?? '',
-      time: toEpoch(p.date, p.time),
+      id: str(row.id) ?? '',
+      mag: toNum(row.magnitude),
+      place: str(row.place) ?? '',
+      time: Number.isFinite(epoch) ? epoch : null,
       ...(depth !== null ? { depth } : {}),
-      ...(safeUrl ? { url: safeUrl } : {}),
       source: FUNVISIS_ATTRIBUTION,
     },
   };
 }
 
 /**
- * Transform a raw SismosVE response into a normalized GeoJSON FeatureCollection:
- * one Point Feature per usable event, dropping any event without readable
- * coordinates. Accepts either `features` or `sismos` arrays. Never throws.
+ * Transform the raw funvisis-catalog CSV text into a normalized GeoJSON
+ * FeatureCollection: one Point Feature per usable row, dropping any row
+ * without readable coordinates or with an unexpected column count. Never
+ * throws — a garbled or truncated CSV yields an empty collection rather than
+ * crashing the gateway (FUNVISIS-03).
  */
-export function toEarthquakeCollection(
-  raw: SismosVeResponse | unknown,
-): EarthquakeFeatureCollection {
-  const obj = raw && typeof raw === 'object' ? (raw as SismosVeResponse) : undefined;
-  const list = Array.isArray(obj?.features)
-    ? obj!.features
-    : Array.isArray(obj?.sismos)
-      ? obj!.sismos
-      : [];
+export function toEarthquakeCollection(csv: string): EarthquakeFeatureCollection {
+  if (typeof csv !== 'string' || csv.trim().length === 0) {
+    return { type: 'FeatureCollection', features: [] };
+  }
 
-  const features = list
+  let rows: CsvRow[];
+  try {
+    rows = parseRows(csv);
+  } catch {
+    return { type: 'FeatureCollection', features: [] };
+  }
+
+  const features = rows
     .map(toFeature)
     .filter((f): f is EarthquakeFeature => f !== undefined);
 

@@ -3,48 +3,54 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { toEarthquakeCollection, FUNVISIS_ATTRIBUTION } from '../parser.js';
 
-const fixture = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../fixtures/sismos.json'), 'utf8'),
+const fixture = fs.readFileSync(
+  path.join(__dirname, '../fixtures/catalog.csv'),
+  'utf8',
 );
 
-describe('toEarthquakeCollection — SismosVE normalization', () => {
-  it('normalizes usable features and drops unreadable coordinates', () => {
+describe('toEarthquakeCollection — funvisis-catalog CSV normalization', () => {
+  it('normalizes usable rows and drops rows with bad coordinates', () => {
     const c = toEarthquakeCollection(fixture);
-    expect(c.features.map((f) => f.properties.id)).toEqual(['syn_fv_001', 'syn_fv_002']);
+    expect(c.features.map((f) => f.properties.id)).toEqual([
+      'ISC_syn_001',
+      'FUNVISIS_R_syn_001',
+      'FUNVISIS_R_syn_002',
+    ]);
   });
 
-  it('coerces string value→mag, depth "12.0 km"→12, and DD-MM-YYYY date→epoch', () => {
+  it('parses lat/lng, magnitude, depth, and ISO time directly (no timezone math needed)', () => {
     const c = toEarthquakeCollection(fixture);
-    const f = c.features[0];
+    const f = c.features.find((x) => x.properties.id === 'FUNVISIS_R_syn_001')!;
     expect(f.geometry.coordinates).toEqual([-68.9, 10.5]);
     expect(f.properties.mag).toBe(3.8);
-    expect(f.properties.place).toContain('Barquisimeto');
+    expect(f.properties.place).toBe('25 km al norte de Barquisimeto');
     expect(f.properties.depth).toBe(12.0);
-    expect(typeof f.properties.time).toBe('number');
-    // SismosVE times are Venezuela local (UTC-4), pinned explicitly so the epoch
-    // is independent of the host TZ.
-    expect(f.properties.time).toBe(Date.parse('2026-06-30T14:32:00-04:00'));
+    expect(f.properties.time).toBe(Date.parse('2026-06-30T18:32:00.0Z'));
   });
 
-  it('tags every feature with the required FUNVISIS (vía SismosVE) attribution', () => {
+  it('tags every feature with the funvisis-catalog attribution', () => {
     const c = toEarthquakeCollection(fixture);
     expect(c.features.every((f) => f.properties.source === FUNVISIS_ATTRIBUTION)).toBe(true);
   });
 
-  it('strips non-http(s) urls (blocks javascript:)', () => {
+  it('drops a row whose column count does not match the header (e.g. an unescaped comma in place)', () => {
     const c = toEarthquakeCollection(fixture);
-    const f = c.features.find((x) => x.properties.id === 'syn_fv_002');
-    expect(f?.properties.url).toBeUndefined();
+    expect(c.features.some((f) => f.properties.id === 'FUNVISIS_R_syn_extra')).toBe(false);
   });
 
-  it('accepts a `sismos`-nested array too', () => {
-    const c = toEarthquakeCollection({ sismos: fixture.features });
-    expect(c.features).toHaveLength(2);
+  it('covers both author regimes (ISC and FUNVISIS-OCR rows)', () => {
+    const c = toEarthquakeCollection(fixture);
+    expect(c.features.map((f) => f.properties.id)).toContain('ISC_syn_001');
+    expect(c.features.map((f) => f.properties.id)).toContain('FUNVISIS_R_syn_001');
   });
 
   it('never throws on garbage input', () => {
-    expect(toEarthquakeCollection(null)).toEqual({ type: 'FeatureCollection', features: [] });
-    expect(toEarthquakeCollection({ features: 'nope' })).toEqual({
+    expect(toEarthquakeCollection('')).toEqual({ type: 'FeatureCollection', features: [] });
+    expect(toEarthquakeCollection('not,even,a,real,header\n1,2,3')).toEqual({
+      type: 'FeatureCollection',
+      features: [],
+    });
+    expect(toEarthquakeCollection(null as unknown as string)).toEqual({
       type: 'FeatureCollection',
       features: [],
     });

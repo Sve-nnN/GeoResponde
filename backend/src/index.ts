@@ -217,17 +217,19 @@ export function buildApp(): FastifyInstance {
     return result.collection
   })
 
-  // Situation map local earthquake layer. Federates the OSS SismosVE feed
-  // (official FUNVISIS data, ~5 min refresh) as cached, normalized GeoJSON.
-  // FUNVISIS has no official public API (their DB is currently down), so
-  // SismosVE is the source of record here. Attribution "FUNVISIS (vía SismosVE)"
-  // is REQUIRED and carried on every feature + this header. `start` applies the
-  // timeline window. Degrades gracefully (X-FUNVISIS-Source), never 5xx.
+  // Situation map local earthquake layer. Federates the funvisis-catalog CSV
+  // (ISC Bulletin + OCR'd official FUNVISIS bulletins, issue #76) as cached,
+  // normalized GeoJSON — chosen over SismosVE/maravilla.json because those
+  // only expose the ~20 most-recent events, with no historical depth for the
+  // ongoing sequence since 2026-06-24. FUNVISIS has no official public API.
+  // Attribution "FUNVISIS (via funvisis-catalog/ISC)" is REQUIRED and carried
+  // on every feature + this header. `start` applies the timeline window.
+  // Degrades gracefully (X-FUNVISIS-Source), never 5xx.
   fastify.get('/api/funvisis/earthquakes', async (request, reply) => {
     const { start } = request.query as { start?: string }
     const result = await fetchFunvisisEarthquakes({ start })
     reply.header('X-FUNVISIS-Source', result.source)
-    reply.header('X-Attribution', 'FUNVISIS (vía SismosVE)')
+    reply.header('X-Attribution', 'FUNVISIS (via funvisis-catalog/ISC)')
     return result.collection
   })
 
