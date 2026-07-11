@@ -88,7 +88,7 @@ GeoResponde operates on a modular, tiered architecture designed to securely conn
 GeoResponde provides a comprehensive suite of tools designed for crisis management and data integration:
 
 * **Federated Operations:** Federated Search and Reporting, fully supporting PFIF (People Finder Interchange Format) exports.
-* **Platform Management:** A robust Provider Registry, a dedicated Provider SDK, and real-time Provider Health Monitoring.
+* **Platform Management:** A robust Provider Registry, a dedicated Provider SDK, and real-time Provider Health Monitoring, visible in the app under the **Providers** tab.
 * **Operational View:** A Situation Room that integrates multiple Scientific Intelligence Layers for spatial awareness.
 
 ## Tech Stack

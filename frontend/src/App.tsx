@@ -19,7 +19,9 @@ function App() {
             <Route path="/find" element={<Find />} />
             <Route path="/report" element={<Report />} />
             <Route path="/about" element={<About />} />
-            <Route path="/dev/providers" element={<ProviderStatus />} />
+            <Route path="/providers" element={<ProviderStatus />} />
+            {/* Kept for anyone with the old dev-only link bookmarked. */}
+            <Route path="/dev/providers" element={<Navigate to="/providers" replace />} />
           </Routes>
           <Footer />
         </main>

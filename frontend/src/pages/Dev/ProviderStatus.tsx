@@ -113,7 +113,7 @@ export function ProviderStatus() {
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', width: '100%', color: 'var(--text-primary)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h2 style={{ margin: 0 }}>{t('dev.providerStatus.title')}</h2>
         <button
@@ -121,9 +121,9 @@ export function ProviderStatus() {
           disabled={refreshing}
           style={{
             padding: '8px 16px',
-            borderRadius: '8px',
-            border: '1px solid #334155',
-            background: '#3498db',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-subtle)',
+            background: 'var(--accent-primary)',
             color: '#fff',
             cursor: refreshing ? 'default' : 'pointer',
             fontWeight: 600,
@@ -136,11 +136,11 @@ export function ProviderStatus() {
 
       <div
         style={{
-          background: '#1e293b',
-          border: '1px solid #334155',
-          borderRadius: '8px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-md)',
           padding: '10px 14px',
-          color: '#94a3b8',
+          color: 'var(--text-secondary)',
           fontSize: '12px',
           lineHeight: 1.4,
           marginBottom: '1rem',
@@ -149,9 +149,9 @@ export function ProviderStatus() {
         {t('dev.providerStatus.statelessNote')}
       </div>
 
-      <div style={{ border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
+      <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #ddd' }}>
+          <thead style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)' }}>
             <tr>
               <th style={{ padding: '12px 16px' }}>{t('dev.providerStatus.colProvider')}</th>
               <th style={{ padding: '12px 16px' }}>{t('dev.providerStatus.colAdapter')}</th>
@@ -172,9 +172,9 @@ export function ProviderStatus() {
               const lastSuccessIso = snap.lastSuccessAt !== null ? new Date(snap.lastSuccessAt).toISOString() : undefined;
 
               return (
-                <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                <tr key={p.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>{p.display_name}</td>
-                  <td style={{ padding: '12px 16px', color: '#666', fontSize: '14px' }}>{p.adapter}</td>
+                  <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontSize: '14px' }}>{p.adapter}</td>
                   <td style={{ padding: '12px 16px' }}>
                     <HealthBadge state={badgeState} />
                   </td>
@@ -198,7 +198,7 @@ export function ProviderStatus() {
             })}
             {providers.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '24px' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-secondary)' }}>
                   {t('dev.providerStatus.loading')}
                 </td>
               </tr>

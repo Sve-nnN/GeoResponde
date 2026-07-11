@@ -61,12 +61,15 @@ export function TopNav() {
             {t('nav.report')}
             <span style={badgeStyle('#64748b')}>In Dev</span>
           </NavLink>
+          <NavLink to="/providers" style={linkStyle}>
+            {t('nav.providers')}
+          </NavLink>
           <NavLink to="/about" style={linkStyle}>
             {t('nav.about')}
           </NavLink>
         </div>
       </div>
-      
+
       {/* Desktop Language Selector */}
       <div className="desktop-nav" style={{ alignItems: 'center', gap: '8px', color: '#cbd5e1', fontWeight: 'bold' }}>
         <span 
@@ -104,6 +107,9 @@ export function TopNav() {
           <NavLink to="/report" style={linkStyle}>
             {t('nav.report')}
             <span style={badgeStyle('#64748b')}>In Dev</span>
+          </NavLink>
+          <NavLink to="/providers" style={linkStyle}>
+            {t('nav.providers')}
           </NavLink>
           <NavLink to="/about" style={linkStyle}>
             {t('nav.about')}
