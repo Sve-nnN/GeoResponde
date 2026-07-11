@@ -1,34 +1,34 @@
 {
     "nav":  {
-                "situation":  "Situación",
+                "situation":  "SituaciÃ³n",
                 "find":  "Buscar",
                 "report":  "Reportar",
                 "about":  "Acerca de"
             },
     "sidebar":  {
                     "title":  "GeoResponde",
-                    "subtitle":  "Sala de Situación Geoespacial Abierta",
+                    "subtitle":  "Sala de SituaciÃ³n Geoespacial Abierta",
                     "currentEvent":  "Evento Actual: Terremoto Venezuela 2026",
-                    "loading":  "Cargando catálogo...",
-                    "error":  "Error al cargar el catálogo.",
-                    "situationLayers":  "Capas de Situación",
+                    "loading":  "Cargando catÃ¡logo...",
+                    "error":  "Error al cargar el catÃ¡logo.",
+                    "situationLayers":  "Capas de SituaciÃ³n",
                     "liveSources":  "Fuentes en vivo",
                     "externalResources":  "Recursos Externos",
                     "categories":  {
                                        "Earthquakes":  "Sismos",
                                        "Hazards":  "Peligros",
-                                       "Satellite":  "Satélite",
-                                       "Geology":  "Geología",
+                                       "Satellite":  "SatÃ©lite",
+                                       "Geology":  "GeologÃ­a",
                                        "Infrastructure":  "Infraestructura",
                                        "Humanitarian":  "Humanitario",
-                                       "Logistics":  "Logística",
+                                       "Logistics":  "LogÃ­stica",
                                        "Community":  "Comunidad"
                                    },
                     "confidence":  {
                                        "Official":  "Oficial",
                                        "Community Verified":  "Comunidad Verificada",
                                        "Verified":  "Verificado",
-                                       "Pending Verification":  "Pendiente de Verificación"
+                                       "Pending Verification":  "Pendiente de VerificaciÃ³n"
                                    }
                 },
     "situation":  {
@@ -37,16 +37,16 @@
                                     "panelTitle":  "Eventos de desastres naturales",
                                     "panelSource":  "NASA EONET",
                                     "source":  "Fuente",
-                                    "firstSeen":  "Primera aparición",
-                                    "timelineLabel":  "Línea de tiempo",
-                                    "listHeading":  "Eventos por aparición",
-                                    "emptyList":  "Aún no hay eventos para este corte.",
+                                    "firstSeen":  "Primera apariciÃ³n",
+                                    "timelineLabel":  "LÃ­nea de tiempo",
+                                    "listHeading":  "Eventos por apariciÃ³n",
+                                    "emptyList":  "AÃºn no hay eventos para este corte.",
                                     "controlsHeading":  "Filtros",
-                                    "countryLabel":  "País",
-                                    "categoriesLabel":  "Categorías",
+                                    "countryLabel":  "PaÃ­s",
+                                    "categoriesLabel":  "CategorÃ­as",
                                     "legendHeading":  "Leyenda",
-                                    "earthquakesOut":  "Los sismos de EONET están fuera de alcance (inactivos 2015–2018). Para sismos en vivo, consulta el",
-                                    "usgsLink":  "Programa de Amenazas Sísmicas del USGS",
+                                    "earthquakesOut":  "Los sismos de EONET estÃ¡n fuera de alcance (inactivos 2015â2018). Para sismos en vivo, consulta el",
+                                    "usgsLink":  "Programa de Amenazas SÃ­smicas del USGS",
                                     "countries":  {
                                                       "VE":  "Venezuela"
                                                   },
@@ -64,9 +64,9 @@
                                        "scrubberLabel":  "Corte fino",
                                        "presets":  {
                                                        "today":  "Hoy",
-                                                       "week":  "Últimos 7 días",
-                                                       "month":  "Último mes",
-                                                       "all":  "Histórico"
+                                                       "week":  "Ãltimos 7 dÃ­as",
+                                                       "month":  "Ãltimo mes",
+                                                       "all":  "HistÃ³rico"
                                                    }
                                    },
                       "sitios":  {
@@ -76,13 +76,13 @@
                                      "legendHeading":  "Tipos de sitio de ayuda",
                                      "estadoOperativo":  "Estado operativo",
                                      "necesidades":  "Necesidades",
-                                     "frescura":  "Actualización",
+                                     "frescura":  "ActualizaciÃ³n",
                                      "viewRecord":  "Ver ficha",
                                      "untitled":  "Sitio de ayuda",
                                      "attribution":  "Fuente: Venezuela Reporta",
                                      "tipos":  {
                                                    "acopio":  "Centro de acopio",
-                                                   "clinica":  "Clínica",
+                                                   "clinica":  "ClÃ­nica",
                                                    "hospital":  "Hospital",
                                                    "refugio":  "Refugio",
                                                    "otro":  "Otro"
@@ -90,26 +90,26 @@
                                  },
                       "legend":  {
                                      "title":  "Leyenda de capas",
-                                     "nasaTitle":  "Daño Sentinel de la NASA",
-                                     "nasaSubtitle":  "Probabilidad de daño",
+                                     "nasaTitle":  "DaÃ±o Sentinel de la NASA",
+                                     "nasaSubtitle":  "Probabilidad de daÃ±o",
                                      "nasaHigh":  "Alta (75%+)",
                                      "nasaMedium":  "Media (50%)",
                                      "nasaLow":  "Baja (25%)",
                                      "groundMovementTitle":  "Movimiento del terreno (LOS) (m)",
-                                     "builtUpTitle":  "Área construida",
+                                     "builtUpTitle":  "Ãrea construida",
                                      "destroyed":  "Destruido",
-                                     "damaged":  "Dañado",
-                                     "possiblyDamaged":  "Posiblemente dañado",
-                                     "noVisibleDamage":  "Sin daño visible",
+                                     "damaged":  "DaÃ±ado",
+                                     "possiblyDamaged":  "Posiblemente daÃ±ado",
+                                     "noVisibleDamage":  "Sin daÃ±o visible",
                                      "notAnalysed":  "No analizado",
                                      "transportTitle":  "Red de transporte",
                                      "highway":  "Autopista",
-                                     "mainRoad":  "Vía principal",
-                                     "localRoad":  "Vía local",
+                                     "mainRoad":  "VÃ­a principal",
+                                     "localRoad":  "VÃ­a local",
                                      "track":  "Camino",
-                                     "damageNote":  "* El rojo/naranja indica daño",
-                                     "faultsTitle":  "Fallas tectónicas",
-                                     "plateBoundary":  "Límite de placa",
+                                     "damageNote":  "* El rojo/naranja indica daÃ±o",
+                                     "faultsTitle":  "Fallas tectÃ³nicas",
+                                     "plateBoundary":  "LÃ­mite de placa",
                                      "activeFault":  "Falla activa",
                                      "citizenTitle":  "Reportes ciudadanos",
                                      "missingPerson":  "Persona desaparecida",
@@ -121,56 +121,56 @@
                   },
     "find":  {
                  "title":  "Buscar Personas y Recursos",
-                 "subtitle":  "Busca simultáneamente en múltiples organizaciones humanitarias confiables.",
+                 "subtitle":  "Busca simultÃ¡neamente en mÃºltiples organizaciones humanitarias confiables.",
                  "placeholder":  "Buscar personas, edificios, hospitales, refugios...",
-                 "examples":  "Ejemplos rápidos:",
+                 "examples":  "Ejemplos rÃ¡pidos:",
                  "button":  "Buscar",
                  "buttonLoading":  "Buscando...",
                  "source":  "Fuente",
                  "type":  "Tipo",
                  "viewList":  "Lista",
                  "viewMap":  "Mapa",
-                 "openResource":  "Abrir Recurso Original ↗",
-                 "noResults":  "No se encontraron resultados para \"{{query}}\". Intenta con otro término de búsqueda.",
+                 "openResource":  "Abrir Recurso Original â",
+                 "noResults":  "No se encontraron resultados para \"{{query}}\". Intenta con otro tÃ©rmino de bÃºsqueda.",
                  "error":  "Error buscando proveedores",
-                 "serviceUnavailable":  "El servicio de búsqueda no está disponible temporalmente. Inténtalo nuevamente en unos minutos."
+                 "serviceUnavailable":  "El servicio de bÃºsqueda no estÃ¡ disponible temporalmente. IntÃ©ntalo nuevamente en unos minutos."
              },
     "report":  {
-                   "underDevelopment": "El reporte federado está en desarrollo activo. Si un reporte llega a un proveedor, y cómo lo hace, depende de las capacidades de ese proveedor.",
+                   "underDevelopment": "El reporte federado estÃ¡ en desarrollo activo. Si un reporte llega a un proveedor, y cÃ³mo lo hace, depende de las capacidades de ese proveedor.",
                    "availability": {
                        "deliveredTo": "Este tipo de reporte se puede enviar a:",
-                       "none": "Ningún proveedor acepta este tipo de reporte por ahora, así que todavía no se puede entregar. Tu reporte no será enviado.",
-                       "modeApi": "envío en vivo",
-                       "modeDeepLink": "redirección al proveedor"
+                       "none": "NingÃºn proveedor acepta este tipo de reporte por ahora, asÃ­ que todavÃ­a no se puede entregar. Tu reporte no serÃ¡ enviado.",
+                       "modeApi": "envÃ­o en vivo",
+                       "modeDeepLink": "redirecciÃ³n al proveedor"
                    },
-                   "title":  "Reportar Información",
-                   "subtitle":  "Componga un reporte estructurado y GeoResponde lo reenvía a las organizaciones confiables correspondientes.",
+                   "title":  "Reportar InformaciÃ³n",
+                   "subtitle":  "Componga un reporte estructurado y GeoResponde lo reenvÃ­a a las organizaciones confiables correspondientes.",
                    "topics":  {
                                   "missing-person":  "Persona desaparecida",
                                   "resource-need":  "Necesidad de recursos",
                                   "shelter-status":  "Estado de refugio u hospital",
-                                  "building-damage":  "Edificio dañado"
+                                  "building-damage":  "Edificio daÃ±ado"
                               },
                    "fields":  {
                                   "fullName":  "Nombre completo",
                                   "age":  "Edad",
-                                  "gender":  "Género",
-                                  "lastSeenLocation":  "Última ubicación conocida",
-                                  "lastSeenCoords":  "Coordenadas de la última ubicación",
-                                  "cedula":  "Número de cédula",
+                                  "gender":  "GÃ©nero",
+                                  "lastSeenLocation":  "Ãltima ubicaciÃ³n conocida",
+                                  "lastSeenCoords":  "Coordenadas de la Ãºltima ubicaciÃ³n",
+                                  "cedula":  "NÃºmero de cÃ©dula",
                                   "reporterContact":  "Su contacto",
                                   "resourceType":  "Tipo de recurso",
-                                  "location":  "Ubicación",
-                                  "description":  "Descripción",
+                                  "location":  "UbicaciÃ³n",
+                                  "description":  "DescripciÃ³n",
                                   "urgency":  "Urgencia",
                                   "facilityName":  "Nombre del establecimiento",
                                   "facilityType":  "Tipo de establecimiento",
                                   "locationCoords":  "Coordenadas",
                                   "capacityStatus":  "Estado de capacidad",
                                   "needs":  "Necesidades",
-                                  "address":  "Dirección",
-                                  "buildingType":  "Tipo de edificación",
-                                  "damageLevel":  "Nivel de daño"
+                                  "address":  "DirecciÃ³n",
+                                  "buildingType":  "Tipo de edificaciÃ³n",
+                                  "damageLevel":  "Nivel de daÃ±o"
                               },
                    "options":  {
                                    "male":  "Masculino",
@@ -185,65 +185,65 @@
                                    "low":  "Baja",
                                    "medium":  "Media",
                                    "high":  "Alta",
-                                   "critical":  "Crítica",
+                                   "critical":  "CrÃ­tica",
                                    "residential":  "Residencial",
                                    "commercial":  "Comercial",
-                                   "public":  "Público",
+                                   "public":  "PÃºblico",
                                    "mixed":  "Uso mixto",
                                    "minor":  "Leve",
                                    "moderate":  "Moderado",
                                    "severe":  "Severo",
                                    "destroyed":  "Destruido"
                                },
-                   "sensitiveHelper":  "Información sensible: compártala solo si usted lo consiente. GeoResponde nunca la almacena.",
+                   "sensitiveHelper":  "InformaciÃ³n sensible: compÃ¡rtala solo si usted lo consiente. GeoResponde nunca la almacena.",
                    "coordsPlaceholder":  "latitud, longitud",
                    "consent":  {
-                                   "label":  "Autorizo el reenvío de este reporte",
-                                   "text":  "GeoResponde no almacena su reporte. Lo reenvía a los proveedores externos correspondientes y conserva únicamente un comprobante del envío."
+                                   "label":  "Autorizo el reenvÃ­o de este reporte",
+                                   "text":  "GeoResponde no almacena su reporte. Lo reenvÃ­a a los proveedores externos correspondientes y conserva Ãºnicamente un comprobante del envÃ­o."
                                },
                    "submit":  "Enviar reporte",
                    "submitting":  "Enviando...",
                    "result":  {
-                                  "title":  "Resultado del envío",
+                                  "title":  "Resultado del envÃ­o",
                                   "mode":  "Modo",
                                   "status":  "Estado",
-                                  "preview":  "Esto es lo que se reenviaría:",
+                                  "preview":  "Esto es lo que se reenviarÃ­a:",
                                   "networkError":  "No se pudo enviar el reporte. Intente nuevamente."
                               },
                    "errors":  {
                                   "missing":  "Este campo es obligatorio.",
-                                  "invalid":  "Ingresa un valor válido.",
+                                  "invalid":  "Ingresa un valor vÃ¡lido.",
                                   "formIncomplete":  "Completa los campos obligatorios (*) para poder enviar."
                               }
                },
     "about":  {
                   "title":  "GeoResponde",
-                  "subtitle":  "Sala de Situación Geoespacial Abierta",
+                  "subtitle":  "Sala de SituaciÃ³n Geoespacial Abierta",
                   "mission":  {
-                                  "title":  "Misión",
-                                  "p1":  "GeoResponde conecta la inteligencia científica y la información humanitaria en una imagen operativa unificada durante desastres.",
-                                  "p2":  "En lugar de crear otra base de datos aislada, GeoResponde federa información confiable de organizaciones existentes preservando la propiedad de los datos."
+                                  "title":  "MisiÃ³n",
+                                  "p1":  "GeoResponde conecta la inteligencia cientÃ­fica y la informaciÃ³n humanitaria en una imagen operativa unificada durante desastres.",
+                                  "p2":  "En lugar de crear otra base de datos aislada, GeoResponde federa informaciÃ³n confiable de organizaciones existentes preservando la propiedad de los datos."
                               },
                   "whyExists":  {
-                                    "title":  "Por qué existe GeoResponde",
-                                    "p1":  "Durante los desastres la información se fragmenta.",
-                                    "p2":  "Las familias buscan en múltiples sitios web.",
+                                    "title":  "Por quÃ© existe GeoResponde",
+                                    "p1":  "Durante los desastres la informaciÃ³n se fragmenta.",
+                                    "p2":  "Las familias buscan en mÃºltiples sitios web.",
                                     "p3":  "Las organizaciones duplican esfuerzos.",
-                                    "p4":  "Los científicos y socorristas a menudo trabajan con sistemas desconectados.",
+                                    "p4":  "Los cientÃ­ficos y socorristas a menudo trabajan con sistemas desconectados.",
                                     "p5":  "GeoResponde existe para conectar esos mundos."
                                 },
                   "howItWorks":  {
-                                     "title":  "Cómo funciona",
+                                     "title":  "CÃ³mo funciona",
                                      "p1":  "Tres pilares:",
-                                     "pillar1":  "Situación",
-                                     "pillar1sub":  "- Inteligencia Científica",
+                                     "pillar1":  "SituaciÃ³n",
+                                     "pillar1sub":  "- Inteligencia CientÃ­fica",
                                      "p1_1":  "Sismos",
-                                     "p1_2":  "Geología",
+                                     "p1_2":  "GeologÃ­a",
                                      "p1_3":  "Productos satelitales",
                                      "p1_4":  "Peligros",
                                      "pillar2":  "Buscar",
                                      "pillar2sub":  "- Red Humanitaria",
-                                     "p2_1":  "Búsqueda federada",
+                                     "p2_1":  "BÃºsqueda federada",
                                      "p2_2":  "Personas desaparecidas",
                                      "p2_3":  "Hospitales",
                                      "p2_4":  "Refugios",
@@ -251,16 +251,16 @@
                                      "pillar3":  "Reportar",
                                      "pillar3sub":  "- Operaciones",
                                      "p3_1":  "Reporte de incidentes federado",
-                                     "p3_2":  "Próximamente"
+                                     "p3_2":  "PrÃ³ximamente"
                                  },
                   "openSource":  {
-                                     "title":  "Código Abierto",
-                                     "p1":  "GeoResponde se desarrolla como un proyecto de código abierto porque la respuesta a desastres se beneficia de la transparencia, la colaboración y la interoperabilidad.",
-                                     "p2":  "Todos pueden inspeccionar el código. Las organizaciones siguen siendo propietarias de sus propios datos."
+                                     "title":  "CÃ³digo Abierto",
+                                     "p1":  "GeoResponde se desarrolla como un proyecto de cÃ³digo abierto porque la respuesta a desastres se beneficia de la transparencia, la colaboraciÃ³n y la interoperabilidad.",
+                                     "p2":  "Todos pueden inspeccionar el cÃ³digo. Las organizaciones siguen siendo propietarias de sus propios datos."
                                  },
                   "status":  {
                                  "title":  "Estado Actual",
-                                 "situation":  "Situación",
+                                 "situation":  "SituaciÃ³n",
                                  "beta":  "Beta",
                                  "find":  "Buscar",
                                  "experimental":  "Experimental",
@@ -275,30 +275,30 @@
                                   },
                   "principles":  {
                                      "title":  "Nuestros Principios",
-                                     "p1_title":  "Federación sobre duplicación:",
+                                     "p1_title":  "FederaciÃ³n sobre duplicaciÃ³n:",
                                      "p1_text":  "Conectamos sistemas existentes en lugar de crear bases de datos concurrentes.",
                                      "p2_title":  "La propiedad de los datos pertenece a los proveedores:",
                                      "p2_text":  "Las organizaciones siempre son la fuente autorizada.",
                                      "p3_title":  "Abierto por defecto:",
                                      "p3_text":  "La transparencia genera confianza.",
                                      "p4_title":  "La ciencia apoya la respuesta humanitaria:",
-                                     "p4_text":  "La inteligencia científica debe mejorar las decisiones operativas.",
+                                     "p4_text":  "La inteligencia cientÃ­fica debe mejorar las decisiones operativas.",
                                      "p5_title":  "Interoperabilidad primero:",
-                                     "p5_text":  "Los estándares abiertos permiten la colaboración."
+                                     "p5_text":  "Los estÃ¡ndares abiertos permiten la colaboraciÃ³n."
                                  },
                   "disclaimer":  {
                                      "title":  "Aviso legal de datos",
                                      "p1":  "GeoResponde no es propietario de los registros humanitarios.",
-                                     "p2":  "GeoResponde federa información públicamente disponible o autorizada por el proveedor.",
+                                     "p2":  "GeoResponde federa informaciÃ³n pÃºblicamente disponible o autorizada por el proveedor.",
                                      "p3":  "Cada proveedor sigue siendo responsable de sus propios datos.",
-                                     "p4":  "La información crítica siempre debe ser confirmada con la organización de origen."
+                                     "p4":  "La informaciÃ³n crÃ­tica siempre debe ser confirmada con la organizaciÃ³n de origen."
                                  },
                   "philosophy":  {
-                                     "title":  "Filosofía de Proveedores",
+                                     "title":  "FilosofÃ­a de Proveedores",
                                      "subtitle":  "GeoResponde prioriza:",
                                      "li1":  "APIs Oficiales",
-                                     "li2":  "Autorización del proveedor",
-                                     "li3":  "Atribución adecuada",
+                                     "li2":  "AutorizaciÃ³n del proveedor",
+                                     "li3":  "AtribuciÃ³n adecuada",
                                      "li4":  "Enlaces directos a los proveedores",
                                      "li5":  "Evitar duplicaciones innecesarias"
                                  }
@@ -308,12 +308,12 @@
             "badge": {
                 "healthy": "Operativo",
                 "degrading": "Degradado",
-                "down": "Ca�do",
+                "down": "Caído",
                 "warming": "Calentando"
             },
             "sparkline": {
                 "aria": "Historial de tiempos de respuesta",
-                "empty": "sin historial a�n"
+                "empty": "sin historial aún"
             },
             "title": "Estado de Proveedores",
             "refresh": "Actualizar",
@@ -323,14 +323,14 @@
             "colBadge": "Estado",
             "colAvailability": "Disponibilidad",
             "colLatency": "Latencia Promedio",
-            "colLastSuccess": "�ltimo �xito",
+            "colLastSuccess": "Último Éxito",
             "colFailures": "Fallas Consecutivas",
             "colHistory": "Historial de Tiempos de Respuesta",
             "latencyUnit": "ms",
             "never": "Nunca",
             "warmingUp": "Calentando",
             "relativeNow": "justo ahora",
-            "statelessNote": "El historial de salud vive en la memoria del gateway y se reinicia en cada redespliegue; si el gateway corre en m�s de una instancia, las lecturas pueden variar entre ellas. Es una vista en memoria de mejor esfuerzo, no un registro duradero.",
+            "statelessNote": "El historial de salud vive en la memoria del gateway y se reinicia en cada redespliegue; si el gateway corre en más de una instancia, las lecturas pueden variar entre ellas. Es una vista en memoria de mejor esfuerzo, no un registro duradero.",
             "loading": "Cargando proveedores..."
         }
     }

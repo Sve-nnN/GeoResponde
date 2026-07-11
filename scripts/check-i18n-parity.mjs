@@ -22,7 +22,23 @@ function flatten(obj, prefix = '') {
   return keys;
 }
 
+/** Fails loudly if a locale bundle isn't valid UTF-8 (see issue #61 — a prior
+ * reformat silently left the es bundle in Latin-1, corrupting accented
+ * Spanish on load without ever failing this script). */
+function assertUtf8(locale) {
+  const file = resolve(localesDir, locale, 'common.json');
+  const bytes = readFileSync(file);
+  const decoder = new TextDecoder('utf-8', { fatal: true });
+  try {
+    decoder.decode(bytes);
+  } catch {
+    console.error(`i18n encoding FAILED — ${locale}/common.json is not valid UTF-8.`);
+    process.exit(1);
+  }
+}
+
 function loadKeys(locale) {
+  assertUtf8(locale);
   const file = resolve(localesDir, locale, 'common.json');
   return new Set(flatten(JSON.parse(readFileSync(file, 'utf8'))));
 }
