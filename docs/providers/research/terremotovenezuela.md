@@ -1,5 +1,13 @@
 # TerremotoVenezuela Provider Discovery
 
+> **Note**
+>
+> This document is an API discovery and research document.
+> It is **not** an implementation guide.
+>
+> If you are integrating a new provider, follow
+> [`docs/providers/provider-integration-template.md`](../provider-integration-template.md).
+
 ## Overview
 
 - **API Base URL**: `https://api.terremotovenezuela.com/api/v1/`

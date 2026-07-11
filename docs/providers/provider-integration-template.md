@@ -1,5 +1,7 @@
 # Provider Integration Template
 
+> This is the **canonical implementation guide** for adding a provider. Discovery/research documents (e.g. [`docs/providers/research/`](./research/)) capture what an API looks like; this document is where you turn that into a working adapter. See [`docs/providers.md`](../providers.md) for how the provider documentation is organized.
+
 This document is a reference template for integrating a new humanitarian data provider (for example, a missing persons registry, a shelter directory, or a similar civic dataset) into the GeoResponde backend. It is grounded in the existing adapters in the repository (`ayudavenezuela`, `hdx`, `encuentralos`, `reencuentra-ve`), so every pattern shown here already exists in production code. Use it alongside `CONTRIBUTING.md`, which documents the overall contribution workflow.
 
 If anything here conflicts with the code, the code wins. This file describes what the code does today, not an aspirational design.

@@ -12,17 +12,31 @@ Currently Supported Transports:
 - `ArcGIS Feature Services`
 - `Supabase PostgREST`
 
-## Provider Lifecycle and Integration Workflow
+## Provider Documentation Lifecycle
 
-The official process for adding a new provider follows a strict pipeline to ensure stability and reusability:
+Provider-related docs live in three tiers, in the order a provider actually
+moves through them. Knowing which tier a document belongs to prevents
+mistaking a research note for an implementation guide (or vice versa):
 
-1. **Investigation**: Analyze the provider's network traffic, determine available endpoints, and select the most stable integration method (avoiding HTML scraping if possible).
-2. **Transport Selection**: Pick the appropriate transport client from `backend/src/transports/` (or build a new generic one).
-3. **Parser Implementation**: Create a `parser.ts` to structurally traverse the payload and extract relevant fields.
-4. **Normalization**: Map extracted fields to the strictly typed `NormalizedSearchResult` interface.
-5. **Validation**: Test parsing with saved offline payloads via Vitest.
-6. **Registration**: Export the completed adapter class and register it within `ProviderGateway.ts` and `public/catalog/providers.json`.
-7. **Testing**: Use the developer diagnostic endpoint (`/api/dev/inspect/:id`) to verify live execution.
+1. **Discovery / research** — `docs/providers/research/`. Notes from
+   investigating a candidate provider's API: base URL, auth, rate limits,
+   data shape, open questions. Describes what the provider looks like from
+   the outside. Not code, not a build guide — a provider can sit here
+   indefinitely before anyone implements it.
+2. **Implementation** — [`docs/providers/provider-integration-template.md`](./providers/provider-integration-template.md)
+   is the canonical, single guide for turning a researched provider into a
+   working adapter (folder structure, `BaseAdapter` contract, parser rules,
+   fixtures, registration, PR checklist). `CONTRIBUTING.md`'s "Adding a
+   Provider" section is the short version that points here.
+3. **Operational** — [`docs/providers/submission-matrix.md`](./providers/submission-matrix.md)
+   (which providers accept which report topics, live-readiness) and
+   [`docs/providers/testing-checklist.md`](./providers/testing-checklist.md)
+   (pre-PR self-check) describe the fleet of already-integrated providers,
+   not how to build a new one.
+
+If you're reading a doc under `docs/providers/research/` and it reads like
+step-by-step build instructions, or the reverse, that's a sign it's
+mis-filed — flag it.
 
 ## Current Providers
 
