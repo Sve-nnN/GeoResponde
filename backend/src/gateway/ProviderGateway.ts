@@ -52,7 +52,12 @@ export class ProviderGateway {
       this.providers = JSON.parse(content);
       
       for (const p of this.providers) {
-        if (p.status !== 'active') continue;
+        // `reference` providers (e.g. example-reference, the SDK-demonstration
+        // adapter) initialize like `active` ones so they stay reachable through
+        // `/api/dev/inspect/:id` and the normal search fan-out, but the status
+        // field keeps them distinguishable from real humanitarian sources for
+        // any future provider-listing filter.
+        if (p.status !== 'active' && p.status !== 'reference') continue;
 
         const adapter = createAdapter(p);
         if (adapter) {
