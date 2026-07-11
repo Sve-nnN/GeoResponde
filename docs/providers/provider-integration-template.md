@@ -156,6 +156,10 @@ registerAdapter('YourProviderAdapter', YourProviderAdapter);
 
 ## 8. Pull Request checklist
 
+For the full pre-PR self-check (search, attribution, license, health endpoint,
+CI), see the [Provider Testing Checklist](./testing-checklist.md). The items
+below are the adapter-specific mechanics this template walks through:
+
 - [ ] Fixtures are synthetic only, no real personal data anywhere in `fixtures/`
 - [ ] Parser unit tests pass (`npm run test` in `backend/`)
 - [ ] Catalog entry added to `public/catalog/providers.json` (and `data/catalog/providers/providers.yaml`)
